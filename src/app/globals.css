@@ -1,0 +1,1164 @@
+/* ============================================================
+   Markdown Previewer PWA — Crayon-Styled Design System
+   Pink & Purple palette · Hand-drawn aesthetic · Light only
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Kalam:wght@300;400;700&family=Patrick+Hand&family=Fira+Code:wght@400;500&display=swap');
+
+/* ----------------------------------------------------------
+   1. CSS Custom Properties (Design Tokens)
+   ---------------------------------------------------------- */
+:root {
+  /* Primary palette */
+  --crayon-pink: #E91E8C;
+  --crayon-pink-hover: #D81B7F;
+  --crayon-pink-light: #F48FB1;
+  --crayon-pink-bg: #FCE4EC;
+  --crayon-pink-subtle: #FFF0F5;
+
+  --crayon-purple: #7B1FA2;
+  --crayon-purple-hover: #6A1B9A;
+  --crayon-purple-light: #BA68C8;
+  --crayon-purple-bg: #F3E5F5;
+  --crayon-purple-subtle: #FAF0FF;
+
+  /* Neutrals */
+  --crayon-bg: #FFF8F6;
+  --crayon-surface: #FFFFFF;
+  --crayon-text: #3E2723;
+  --crayon-text-secondary: #6D4C5E;
+  --crayon-text-muted: #A08090;
+  --crayon-border: #E8C8D8;
+  --crayon-border-light: #F3DDE8;
+
+  /* Accent */
+  --crayon-accent: #FF6FB7;
+  --crayon-success: #8BC34A;
+  --crayon-warning: #FFB74D;
+  --crayon-error: #EF5350;
+
+  /* Shadows */
+  --crayon-shadow-sm: 2px 2px 0px rgba(123, 31, 162, 0.08);
+  --crayon-shadow-md: 3px 3px 0px rgba(123, 31, 162, 0.1), 1px 1px 0px rgba(233, 30, 140, 0.05);
+  --crayon-shadow-lg: 5px 5px 0px rgba(123, 31, 162, 0.12), 2px 2px 0px rgba(233, 30, 140, 0.06);
+  --crayon-shadow-glow: 0 0 20px rgba(233, 30, 140, 0.15), 0 0 40px rgba(123, 31, 162, 0.08);
+
+  /* Typography */
+  --font-heading: 'Kalam', cursive;
+  --font-body: 'Patrick Hand', cursive;
+  --font-code: 'Fira Code', monospace;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 2rem;
+
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+
+  /* Border radius — hand-drawn wobbly */
+  --radius-wobbly: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  --radius-wobbly-sm: 15px 4px 12px 4px / 4px 12px 4px 15px;
+  --radius-wobbly-lg: 30px 8px 25px 8px / 8px 25px 8px 30px;
+  --radius-round: 50%;
+  --radius-pill: 9999px;
+  --radius-md: 12px;
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 400ms ease;
+  --transition-bounce: 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ----------------------------------------------------------
+   2. Reset & Base
+   ---------------------------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--font-size-lg);
+  color: var(--crayon-text);
+  background-color: var(--crayon-bg);
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Paper texture overlay */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  background-image:
+    radial-gradient(circle at 20% 50%, rgba(233, 30, 140, 0.02) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(123, 31, 162, 0.02) 0%, transparent 50%),
+    radial-gradient(circle at 50% 80%, rgba(244, 143, 177, 0.02) 0%, transparent 50%);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  color: var(--crayon-purple);
+  line-height: 1.3;
+}
+
+a {
+  color: var(--crayon-pink);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--crayon-purple);
+}
+
+/* ----------------------------------------------------------
+   3. Scrollbar
+   ---------------------------------------------------------- */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--crayon-pink-subtle);
+  border-radius: var(--radius-pill);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--crayon-pink-light), var(--crayon-purple-light));
+  border-radius: var(--radius-pill);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--crayon-pink), var(--crayon-purple));
+}
+
+/* ----------------------------------------------------------
+   4. Layout — App Shell
+   ---------------------------------------------------------- */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-lg);
+  background: var(--crayon-surface);
+  border-bottom: 3px solid var(--crayon-border);
+  box-shadow: var(--crayon-shadow-sm);
+  z-index: 100;
+  min-height: 60px;
+  position: relative;
+}
+
+.app-header::after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg,
+    var(--crayon-pink) 0%,
+    var(--crayon-purple-light) 25%,
+    var(--crayon-pink-light) 50%,
+    var(--crayon-purple) 75%,
+    var(--crayon-pink) 100%
+  );
+  background-size: 200% 100%;
+  animation: crayonStripe 8s linear infinite;
+}
+
+@keyframes crayonStripe {
+  0% { background-position: 0% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.app-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-family: var(--font-heading);
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--crayon-purple);
+  user-select: none;
+}
+
+.app-logo-icon {
+  font-size: 1.6rem;
+  filter: drop-shadow(1px 1px 0px rgba(233, 30, 140, 0.3));
+}
+
+.app-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.app-main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ----------------------------------------------------------
+   5. Split Pane (Editor / Preview)
+   ---------------------------------------------------------- */
+.split-pane {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.pane {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+}
+
+.pane-editor {
+  border-right: 3px solid var(--crayon-border);
+  background: var(--crayon-surface);
+}
+
+.pane-preview {
+  background: var(--crayon-bg);
+}
+
+.pane-divider {
+  width: 6px;
+  background: linear-gradient(180deg, var(--crayon-pink-bg), var(--crayon-purple-bg));
+  cursor: col-resize;
+  flex-shrink: 0;
+  position: relative;
+  transition: background var(--transition-fast);
+}
+
+.pane-divider:hover {
+  background: linear-gradient(180deg, var(--crayon-pink-light), var(--crayon-purple-light));
+}
+
+.pane-divider::after {
+  content: '⋮';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 14px;
+  color: var(--crayon-purple-light);
+  font-weight: bold;
+}
+
+/* Mobile tabs */
+.mobile-tabs {
+  display: none;
+  border-bottom: 2px solid var(--crayon-border);
+  background: var(--crayon-surface);
+}
+
+.mobile-tab {
+  flex: 1;
+  padding: var(--space-sm) var(--space-md);
+  border: none;
+  background: none;
+  font-family: var(--font-heading);
+  font-size: var(--font-size-base);
+  color: var(--crayon-text-muted);
+  cursor: pointer;
+  position: relative;
+  transition: color var(--transition-fast);
+}
+
+.mobile-tab.active {
+  color: var(--crayon-pink);
+  font-weight: 700;
+}
+
+.mobile-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 20%;
+  right: 20%;
+  height: 3px;
+  background: linear-gradient(90deg, var(--crayon-pink), var(--crayon-purple));
+  border-radius: var(--radius-pill);
+}
+
+@media (max-width: 768px) {
+  .split-pane {
+    flex-direction: column;
+  }
+
+  .pane-editor {
+    border-right: none;
+  }
+
+  .pane-divider {
+    display: none;
+  }
+
+  .pane.hidden-mobile {
+    display: none;
+  }
+
+  .mobile-tabs {
+    display: flex;
+  }
+}
+
+/* ----------------------------------------------------------
+   6. Buttons
+   ---------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  border: 2px solid transparent;
+  border-radius: var(--radius-wobbly-sm);
+  font-family: var(--font-heading);
+  font-size: var(--font-size-sm);
+  font-weight: 400;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  position: relative;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.btn:active {
+  transform: scale(0.96);
+}
+
+/* Primary — pink/purple gradient */
+.btn-primary {
+  background: linear-gradient(135deg, var(--crayon-pink) 0%, var(--crayon-purple) 100%);
+  color: white;
+  border-color: var(--crayon-pink-hover);
+  box-shadow: var(--crayon-shadow-md);
+}
+
+.btn-primary:hover {
+  box-shadow: var(--crayon-shadow-lg);
+  transform: translateY(-1px) rotate(-0.5deg);
+  filter: brightness(1.05);
+}
+
+/* Secondary — outline */
+.btn-secondary {
+  background: var(--crayon-surface);
+  color: var(--crayon-purple);
+  border-color: var(--crayon-purple-light);
+  box-shadow: var(--crayon-shadow-sm);
+}
+
+.btn-secondary:hover {
+  background: var(--crayon-purple-bg);
+  border-color: var(--crayon-purple);
+  transform: translateY(-1px) rotate(0.5deg);
+}
+
+/* Ghost */
+.btn-ghost {
+  background: transparent;
+  color: var(--crayon-text-secondary);
+  border-color: transparent;
+}
+
+.btn-ghost:hover {
+  background: var(--crayon-pink-bg);
+  color: var(--crayon-pink);
+}
+
+/* Icon button */
+.btn-icon {
+  padding: var(--space-sm);
+  min-width: 36px;
+  min-height: 36px;
+  border-radius: var(--radius-md);
+}
+
+.btn-icon:hover {
+  transform: rotate(-5deg) scale(1.05);
+}
+
+/* Sizes */
+.btn-sm {
+  padding: var(--space-xs) var(--space-sm);
+  font-size: var(--font-size-xs);
+}
+
+.btn-lg {
+  padding: var(--space-md) var(--space-lg);
+  font-size: var(--font-size-lg);
+}
+
+/* ----------------------------------------------------------
+   7. Cards & Panels
+   ---------------------------------------------------------- */
+.card {
+  background: var(--crayon-surface);
+  border: 2px solid var(--crayon-border);
+  border-radius: var(--radius-wobbly-sm);
+  box-shadow: var(--crayon-shadow-md);
+  padding: var(--space-md);
+  transition: all var(--transition-base);
+}
+
+.card:hover {
+  box-shadow: var(--crayon-shadow-lg);
+  transform: translateY(-2px);
+}
+
+.card-pink {
+  border-color: var(--crayon-pink-light);
+  background: linear-gradient(135deg, var(--crayon-surface) 0%, var(--crayon-pink-subtle) 100%);
+}
+
+.card-purple {
+  border-color: var(--crayon-purple-light);
+  background: linear-gradient(135deg, var(--crayon-surface) 0%, var(--crayon-purple-subtle) 100%);
+}
+
+/* ----------------------------------------------------------
+   8. Dropdown / Menu
+   ---------------------------------------------------------- */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 200px;
+  background: var(--crayon-surface);
+  border: 2px solid var(--crayon-border);
+  border-radius: var(--radius-wobbly-sm);
+  box-shadow: var(--crayon-shadow-lg);
+  padding: var(--space-xs);
+  z-index: 200;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px) scale(0.96);
+  transition: all var(--transition-base);
+}
+
+.dropdown-menu.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border: none;
+  background: none;
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  color: var(--crayon-text);
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  text-align: left;
+}
+
+.dropdown-item:hover {
+  background: var(--crayon-pink-bg);
+  color: var(--crayon-pink);
+  transform: translateX(4px);
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: var(--crayon-border-light);
+  margin: var(--space-xs) 0;
+}
+
+/* ----------------------------------------------------------
+   9. History Panel (Slide-out Drawer)
+   ---------------------------------------------------------- */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(123, 31, 162, 0.15);
+  backdrop-filter: blur(4px);
+  z-index: 300;
+  opacity: 0;
+  visibility: hidden;
+  transition: all var(--transition-base);
+}
+
+.drawer-overlay.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 360px;
+  max-width: 90vw;
+  background: var(--crayon-surface);
+  border-left: 3px solid var(--crayon-border);
+  box-shadow: -5px 0 30px rgba(123, 31, 162, 0.1);
+  z-index: 301;
+  transform: translateX(100%);
+  transition: transform var(--transition-slow);
+  display: flex;
+  flex-direction: column;
+}
+
+.drawer.open {
+  transform: translateX(0);
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 2px solid var(--crayon-border);
+}
+
+.drawer-header h2 {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-xl);
+  color: var(--crayon-purple);
+}
+
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-md);
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+  margin-bottom: var(--space-sm);
+  background: var(--crayon-bg);
+  border: 2px solid var(--crayon-border-light);
+  border-radius: var(--radius-wobbly-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.history-item:hover {
+  border-color: var(--crayon-pink-light);
+  background: var(--crayon-pink-subtle);
+  transform: translateX(-4px);
+}
+
+.history-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.history-item-title {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  color: var(--crayon-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.history-item-date {
+  font-size: var(--font-size-xs);
+  color: var(--crayon-text-muted);
+}
+
+.history-item-actions {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.history-empty {
+  text-align: center;
+  padding: var(--space-2xl);
+  color: var(--crayon-text-muted);
+}
+
+.history-empty-icon {
+  font-size: 3rem;
+  margin-bottom: var(--space-md);
+}
+
+/* ----------------------------------------------------------
+   10. Preview Themes
+   ---------------------------------------------------------- */
+
+/* GitHub theme */
+[data-preview-theme="github"] {
+  --preview-bg: #ffffff;
+  --preview-text: #24292f;
+  --preview-heading: #1f2328;
+  --preview-code-bg: #f6f8fa;
+  --preview-code-text: #24292f;
+  --preview-link: #0969da;
+  --preview-border: #d0d7de;
+  --preview-blockquote: #656d76;
+  --preview-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+
+/* Sepia theme */
+[data-preview-theme="sepia"] {
+  --preview-bg: #f4ecd8;
+  --preview-text: #5b4636;
+  --preview-heading: #3e2723;
+  --preview-code-bg: #ece0c8;
+  --preview-code-text: #5b4636;
+  --preview-link: #8b5e3c;
+  --preview-border: #d4c5a9;
+  --preview-blockquote: #7a6652;
+  --preview-font: Georgia, "Times New Roman", serif;
+}
+
+/* Crayon theme (default) */
+[data-preview-theme="crayon"] {
+  --preview-bg: var(--crayon-pink-subtle);
+  --preview-text: var(--crayon-text);
+  --preview-heading: var(--crayon-purple);
+  --preview-code-bg: var(--crayon-purple-bg);
+  --preview-code-text: var(--crayon-purple);
+  --preview-link: var(--crayon-pink);
+  --preview-border: var(--crayon-border);
+  --preview-blockquote: var(--crayon-text-secondary);
+  --preview-font: var(--font-body);
+}
+
+/* Preview pane content styling */
+.preview-content {
+  padding: var(--space-lg) var(--space-xl);
+  max-width: 800px;
+  margin: 0 auto;
+  background: var(--preview-bg);
+  color: var(--preview-text);
+  font-family: var(--preview-font);
+  font-size: var(--font-size-base);
+  line-height: 1.7;
+  min-height: 100%;
+}
+
+.preview-content h1 {
+  font-size: 2em;
+  font-weight: 700;
+  color: var(--preview-heading);
+  border-bottom: 2px solid var(--preview-border);
+  padding-bottom: var(--space-sm);
+  margin: var(--space-lg) 0 var(--space-md);
+  font-family: var(--preview-font);
+}
+
+.preview-content h2 {
+  font-size: 1.5em;
+  font-weight: 600;
+  color: var(--preview-heading);
+  border-bottom: 1px solid var(--preview-border);
+  padding-bottom: var(--space-xs);
+  margin: var(--space-lg) 0 var(--space-md);
+  font-family: var(--preview-font);
+}
+
+.preview-content h3 {
+  font-size: 1.25em;
+  font-weight: 600;
+  color: var(--preview-heading);
+  margin: var(--space-md) 0 var(--space-sm);
+  font-family: var(--preview-font);
+}
+
+.preview-content h4, .preview-content h5, .preview-content h6 {
+  font-weight: 600;
+  color: var(--preview-heading);
+  margin: var(--space-md) 0 var(--space-sm);
+  font-family: var(--preview-font);
+}
+
+.preview-content p {
+  margin: 0 0 var(--space-md);
+}
+
+.preview-content a {
+  color: var(--preview-link);
+  text-decoration: underline;
+}
+
+.preview-content code {
+  background: var(--preview-code-bg);
+  color: var(--preview-code-text);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: var(--font-code);
+  font-size: 0.9em;
+}
+
+.preview-content pre {
+  background: var(--preview-code-bg);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  margin: 0 0 var(--space-md);
+  border: 1px solid var(--preview-border);
+}
+
+.preview-content pre code {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+}
+
+.preview-content blockquote {
+  border-left: 4px solid var(--preview-border);
+  padding: var(--space-sm) var(--space-md);
+  margin: 0 0 var(--space-md);
+  color: var(--preview-blockquote);
+  background: rgba(0,0,0,0.02);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+}
+
+.preview-content ul, .preview-content ol {
+  padding-left: var(--space-lg);
+  margin: 0 0 var(--space-md);
+}
+
+.preview-content li {
+  margin-bottom: var(--space-xs);
+}
+
+.preview-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 var(--space-md);
+}
+
+.preview-content th, .preview-content td {
+  border: 1px solid var(--preview-border);
+  padding: var(--space-sm) var(--space-md);
+  text-align: left;
+}
+
+.preview-content th {
+  background: var(--preview-code-bg);
+  font-weight: 600;
+}
+
+.preview-content hr {
+  border: none;
+  border-top: 2px solid var(--preview-border);
+  margin: var(--space-lg) 0;
+}
+
+.preview-content img {
+  max-width: 100%;
+  border-radius: var(--radius-md);
+}
+
+/* ----------------------------------------------------------
+   11. Theme Switcher Pills
+   ---------------------------------------------------------- */
+.theme-switcher {
+  display: flex;
+  gap: 2px;
+  background: var(--crayon-pink-bg);
+  border-radius: var(--radius-pill);
+  padding: 2px;
+  border: 2px solid var(--crayon-border);
+}
+
+.theme-pill {
+  padding: var(--space-xs) var(--space-md);
+  border: none;
+  background: none;
+  font-family: var(--font-heading);
+  font-size: var(--font-size-xs);
+  color: var(--crayon-text-muted);
+  cursor: pointer;
+  border-radius: var(--radius-pill);
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.theme-pill:hover {
+  color: var(--crayon-pink);
+}
+
+.theme-pill.active {
+  background: linear-gradient(135deg, var(--crayon-pink), var(--crayon-purple));
+  color: white;
+  box-shadow: var(--crayon-shadow-sm);
+}
+
+/* ----------------------------------------------------------
+   12. Toast / Notification
+   ---------------------------------------------------------- */
+.toast-container {
+  position: fixed;
+  bottom: var(--space-lg);
+  right: var(--space-lg);
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--crayon-surface);
+  border: 2px solid var(--crayon-border);
+  border-radius: var(--radius-wobbly-sm);
+  box-shadow: var(--crayon-shadow-lg);
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  animation: toastIn 0.4s var(--transition-bounce) forwards;
+  max-width: 350px;
+}
+
+.toast-success {
+  border-color: var(--crayon-success);
+}
+
+.toast-error {
+  border-color: var(--crayon-error);
+}
+
+.toast-info {
+  border-color: var(--crayon-pink-light);
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%) rotate(2deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) rotate(0);
+  }
+}
+
+@keyframes toastOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+/* ----------------------------------------------------------
+   13. AI Refine Button
+   ---------------------------------------------------------- */
+.btn-ai {
+  background: linear-gradient(135deg, var(--crayon-purple) 0%, var(--crayon-pink) 50%, var(--crayon-purple-light) 100%);
+  background-size: 200% 200%;
+  color: white;
+  border: 2px solid var(--crayon-purple);
+  animation: aiGlow 3s ease infinite;
+}
+
+.btn-ai:hover {
+  box-shadow: var(--crayon-shadow-glow);
+  transform: translateY(-2px) rotate(-1deg);
+}
+
+@keyframes aiGlow {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Loading spinner */
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: var(--radius-round);
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ----------------------------------------------------------
+   14. CodeMirror Overrides (Crayon theme)
+   ---------------------------------------------------------- */
+.cm-editor {
+  height: 100%;
+  font-family: var(--font-code) !important;
+  font-size: 15px !important;
+}
+
+.cm-editor .cm-scroller {
+  font-family: var(--font-code) !important;
+}
+
+.cm-editor .cm-content {
+  padding: var(--space-md) var(--space-lg) !important;
+}
+
+.cm-editor .cm-gutters {
+  background: var(--crayon-pink-subtle) !important;
+  border-right: 2px solid var(--crayon-border) !important;
+  color: var(--crayon-pink-light) !important;
+  font-family: var(--font-code) !important;
+}
+
+.cm-editor .cm-activeLineGutter {
+  background: var(--crayon-pink-bg) !important;
+  color: var(--crayon-pink) !important;
+}
+
+.cm-editor .cm-activeLine {
+  background: rgba(233, 30, 140, 0.04) !important;
+}
+
+.cm-editor .cm-cursor {
+  border-left-color: var(--crayon-pink) !important;
+  border-left-width: 2px !important;
+}
+
+.cm-editor .cm-selectionBackground {
+  background: rgba(186, 104, 200, 0.25) !important;
+}
+
+.cm-editor .cm-focused .cm-selectionBackground {
+  background: rgba(186, 104, 200, 0.3) !important;
+}
+
+/* ----------------------------------------------------------
+   15. Empty State / Placeholder
+   ---------------------------------------------------------- */
+.empty-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--crayon-text-muted);
+  padding: var(--space-2xl);
+  text-align: center;
+}
+
+.empty-preview-icon {
+  font-size: 4rem;
+  margin-bottom: var(--space-md);
+  opacity: 0.5;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.empty-preview h3 {
+  font-family: var(--font-heading);
+  color: var(--crayon-text-muted);
+  margin-bottom: var(--space-sm);
+}
+
+/* ----------------------------------------------------------
+   16. Status Bar
+   ---------------------------------------------------------- */
+.status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-xs) var(--space-lg);
+  background: var(--crayon-surface);
+  border-top: 2px solid var(--crayon-border-light);
+  font-size: var(--font-size-xs);
+  color: var(--crayon-text-muted);
+  min-height: 28px;
+}
+
+.status-bar-left,
+.status-bar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-round);
+  margin-right: var(--space-xs);
+}
+
+.status-dot-saved {
+  background: var(--crayon-success);
+}
+
+.status-dot-unsaved {
+  background: var(--crayon-warning);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* ----------------------------------------------------------
+   17. Utility Classes
+   ---------------------------------------------------------- */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.text-pink { color: var(--crayon-pink); }
+.text-purple { color: var(--crayon-purple); }
+.text-muted { color: var(--crayon-text-muted); }
+
+.bg-pink { background: var(--crayon-pink-bg); }
+.bg-purple { background: var(--crayon-purple-bg); }
+
+.font-heading { font-family: var(--font-heading); }
+.font-body { font-family: var(--font-body); }
+.font-code { font-family: var(--font-code); }
+
+/* Crayon wiggle animation for interactive elements */
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-1deg); }
+  75% { transform: rotate(1deg); }
+}
+
+.wiggle:hover {
+  animation: wiggle 0.3s ease;
+}
+
+/* Modal overlay */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(123, 31, 162, 0.2);
+  backdrop-filter: blur(6px);
+  z-index: 400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-lg);
+}
+
+.modal {
+  background: var(--crayon-surface);
+  border: 3px solid var(--crayon-border);
+  border-radius: var(--radius-wobbly-lg);
+  box-shadow: var(--crayon-shadow-lg);
+  padding: var(--space-xl);
+  max-width: 500px;
+  width: 100%;
+  animation: modalIn 0.3s var(--transition-bounce);
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) rotate(-1deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+.modal h2 {
+  font-family: var(--font-heading);
+  color: var(--crayon-purple);
+  margin-bottom: var(--space-md);
+}
+
+.modal-actions {
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: flex-end;
+  margin-top: var(--space-lg);
+}
+
+/* Input fields */
+.input {
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  border: 2px solid var(--crayon-border);
+  border-radius: var(--radius-wobbly-sm);
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  color: var(--crayon-text);
+  background: var(--crayon-surface);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  outline: none;
+}
+
+.input:focus {
+  border-color: var(--crayon-pink);
+  box-shadow: 0 0 0 3px rgba(233, 30, 140, 0.1);
+}
+
+.input::placeholder {
+  color: var(--crayon-text-muted);
+}
