@@ -17,6 +17,7 @@ import {
   CheckIcon,
   CloseIcon,
   EyeIcon,
+  ImageIcon,
 } from '@/components/Icons';
 import { saveVersion, updateDoc, listFolders, DocEntry } from '@/lib/db';
 import { autoDetectFolderName } from '@/lib/folderHelper';
@@ -89,6 +90,11 @@ export default function Home() {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleInputVal, setTitleInputVal] = useState('');
 
+  // Wallpaper / Background customizer state
+  const [isWallpaperOpen, setIsWallpaperOpen] = useState(false);
+  const [customBgUrl, setCustomBgUrl] = useState('');
+  const wallpaperPopoverRef = useRef<HTMLDivElement>(null);
+
   const previewRef = useRef<HTMLDivElement>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -103,23 +109,35 @@ export default function Home() {
     localStorage.setItem('previewTheme', previewTheme);
   }, [previewTheme]);
 
+  // Load saved background wallpaper
+  useEffect(() => {
+    const savedBg = localStorage.getItem('userCustomBg');
+    if (savedBg) {
+      setCustomBgUrl(savedBg);
+      document.body.style.setProperty('--user-custom-bg', `url("${savedBg}")`);
+    }
+  }, []);
+
   // Load existing folders for suggestions
   useEffect(() => {
     listFolders().then((f) => setExistingFolders(f)).catch(() => {});
   }, [currentDocId, folder]);
 
-  // Click outside folder popover to close
+  // Click outside folder and wallpaper popovers to close
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (folderPopoverRef.current && !folderPopoverRef.current.contains(e.target as Node)) {
         setIsEditingFolder(false);
       }
+      if (wallpaperPopoverRef.current && !wallpaperPopoverRef.current.contains(e.target as Node)) {
+        setIsWallpaperOpen(false);
+      }
     }
-    if (isEditingFolder) {
+    if (isEditingFolder || isWallpaperOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isEditingFolder]);
+  }, [isEditingFolder, isWallpaperOpen]);
 
   // Toast helper
   const addToast = useCallback((message: string, type: 'success' | 'error' | 'info' = 'info') => {
@@ -299,6 +317,43 @@ export default function Home() {
         }
       })
       .catch(() => addToast('Google Docs export failed', 'error'));
+  }
+
+  // Custom background wallpaper handlers
+  function handleApplyWallpaper(url: string) {
+    const trimmed = url.trim();
+    if (!trimmed) return;
+    document.body.style.setProperty('--user-custom-bg', `url("${trimmed}")`);
+    localStorage.setItem('userCustomBg', trimmed);
+    setCustomBgUrl(trimmed);
+    setIsWallpaperOpen(false);
+    addToast('Background wallpaper updated', 'success');
+  }
+
+  function handleWallpaperFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      if (dataUrl) {
+        document.body.style.setProperty('--user-custom-bg', `url("${dataUrl}")`);
+        localStorage.setItem('userCustomBg', dataUrl);
+        setCustomBgUrl(dataUrl);
+        setIsWallpaperOpen(false);
+        addToast('Uploaded background wallpaper applied', 'success');
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function handleResetWallpaper() {
+    document.body.style.setProperty('--user-custom-bg', 'none');
+    localStorage.removeItem('userCustomBg');
+    setCustomBgUrl('');
+    setIsWallpaperOpen(false);
+    addToast('Reset to default ambient background', 'info');
   }
 
   // AI Refine
@@ -502,6 +557,78 @@ export default function Home() {
             onExportDocx={handleExportDocx}
             onExportGoogleDocs={handleExportGoogleDocs}
           />
+
+          {/* Wallpaper / Custom Background control */}
+          <div style={{ position: 'relative' }} ref={wallpaperPopoverRef}>
+            <button
+              type="button"
+              className="btn btn-ghost btn-icon wiggle"
+              onClick={() => setIsWallpaperOpen(!isWallpaperOpen)}
+              title="Custom background wallpaper"
+              aria-label="Custom background wallpaper"
+            >
+              <ImageIcon size={18} />
+            </button>
+
+            {isWallpaperOpen && (
+              <div className="wallpaper-popover">
+                <div className="wallpaper-popover-header">
+                  <span className="font-heading text-purple">Custom Background</span>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-icon btn-xs"
+                    onClick={() => setIsWallpaperOpen(false)}
+                  >
+                    <CloseIcon size={12} />
+                  </button>
+                </div>
+                <p className="wallpaper-desc">
+                  Set a custom wallpaper or background image behind this floating glass window.
+                </p>
+
+                <div className="wallpaper-options">
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <input
+                      type="text"
+                      className="input input-sm"
+                      placeholder="Paste image URL..."
+                      value={customBgUrl}
+                      onChange={(e) => setCustomBgUrl(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleApplyWallpaper(customBgUrl);
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-sm"
+                      onClick={() => handleApplyWallpaper(customBgUrl)}
+                    >
+                      Apply
+                    </button>
+                  </div>
+
+                  <label className="wallpaper-file-label">
+                    <ImageIcon size={14} />
+                    <span>Upload image from your computer</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleWallpaperFileUpload}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
+
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-xs text-pink"
+                    onClick={handleResetWallpaper}
+                  >
+                    Reset to default ambient background
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
 
           <button
             type="button"
