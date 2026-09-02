@@ -607,6 +607,36 @@ export default function Home() {
                     </button>
                   </div>
 
+                  {/* Presets */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
+                    <span style={{ fontSize: '11px', color: 'var(--crayon-text-muted)', fontFamily: 'var(--font-heading)' }}>
+                      Quick Presets:
+                    </span>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                      <button
+                        type="button"
+                        className="folder-suggestion-chip"
+                        onClick={() => handleApplyWallpaper('/wallpapers/crayon-desktop.jpg')}
+                      >
+                        Crayon Landscape (Desktop)
+                      </button>
+                      <button
+                        type="button"
+                        className="folder-suggestion-chip"
+                        onClick={() => handleApplyWallpaper('/wallpapers/crayon-mobile.jpg')}
+                      >
+                        Crayon Scenery (Mobile)
+                      </button>
+                      <button
+                        type="button"
+                        className="folder-suggestion-chip"
+                        onClick={handleResetWallpaper}
+                      >
+                        Ambient Mesh
+                      </button>
+                    </div>
+                  </div>
+
                   <label className="wallpaper-file-label">
                     <ImageIcon size={14} />
                     <span>Upload image from your computer</span>
@@ -618,13 +648,27 @@ export default function Home() {
                     />
                   </label>
 
-                  <button
-                    type="button"
-                    className="btn btn-ghost btn-xs text-pink"
-                    onClick={handleResetWallpaper}
-                  >
-                    Reset to default ambient background
-                  </button>
+                  {/* Download wallpaper links */}
+                  <div style={{ borderTop: '1px solid rgba(232, 200, 216, 0.5)', paddingTop: '6px', display: 'flex', justifyContent: 'space-between' }}>
+                    <a
+                      href="/wallpapers/crayon-desktop.jpg"
+                      download="crayon-desktop-wallpaper.jpg"
+                      className="btn btn-ghost btn-xs text-pink"
+                      style={{ textDecoration: 'none' }}
+                      title="Download full-res desktop wallpaper"
+                    >
+                      Download Desktop
+                    </a>
+                    <a
+                      href="/wallpapers/crayon-mobile.jpg"
+                      download="crayon-mobile-wallpaper.jpg"
+                      className="btn btn-ghost btn-xs text-purple"
+                      style={{ textDecoration: 'none' }}
+                      title="Download full-res mobile wallpaper"
+                    >
+                      Download Mobile
+                    </a>
+                  </div>
                 </div>
               </div>
             )}

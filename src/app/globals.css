@@ -104,7 +104,7 @@
     0 4px 16px rgba(123, 31, 162, 0.08),
     inset 0 1px 0.5px rgba(255, 255, 255, 0.9);
 
-  --user-custom-bg: none;
+  --user-custom-bg: url('/wallpapers/crayon-desktop.jpg');
 }
 
 /* ----------------------------------------------------------
@@ -141,7 +141,7 @@ body {
   /* Ambient pink-purple background with support for custom user wallpaper */
   background-color: #fdf2f7;
   background-image:
-    var(--user-custom-bg, none),
+    var(--user-custom-bg, url('/wallpapers/crayon-desktop.jpg')),
     radial-gradient(at 8% 12%, rgba(233, 30, 140, 0.22) 0px, transparent 50%),
     radial-gradient(at 92% 8%, rgba(123, 31, 162, 0.24) 0px, transparent 50%),
     radial-gradient(at 50% 50%, rgba(255, 225, 242, 0.45) 0px, transparent 60%),
@@ -1730,6 +1730,9 @@ a:hover {
 @media (max-width: 768px) {
   body {
     padding: 6px;
+    background-image:
+      var(--user-custom-bg, url('/wallpapers/crayon-mobile.jpg')),
+      linear-gradient(135deg, #fff2f8 0%, #f7e8f8 50%, #fae6f2 100%);
   }
 
   .app-container {
