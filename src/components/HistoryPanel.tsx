@@ -14,6 +14,8 @@ import {
   EditIcon,
   CheckIcon,
   EmptyDocIllustration,
+  GoogleIcon,
+  DatabaseIcon,
 } from './Icons';
 
 interface HistoryPanelProps {
@@ -271,6 +273,30 @@ export default function HistoryPanel({ isOpen, onClose, onRestore }: HistoryPane
               );
             })
           )}
+        </div>
+
+        {/* Drawer footer: Local storage status & Google Login */}
+        <div className="drawer-footer">
+          <div className="storage-status-card">
+            <div className="storage-status-header">
+              <span className="storage-status-pill">
+                <span className="status-dot status-dot-saved" />
+                <span>Local Storage Active</span>
+              </span>
+              <DatabaseIcon size={14} className="text-purple" />
+            </div>
+            <p className="storage-status-desc">
+              All documents are currently saved offline in your browser. Sign in with Google to enable cloud database sync and access your history anywhere.
+            </p>
+            <a
+              href="/api/google/auth"
+              className="btn btn-google"
+              title="Sign in with Google to sync notes to cloud database"
+            >
+              <GoogleIcon size={16} />
+              <span>Continue with Google</span>
+            </a>
+          </div>
         </div>
       </div>
     </>

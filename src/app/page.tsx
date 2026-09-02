@@ -18,6 +18,8 @@ import {
   CloseIcon,
   EyeIcon,
   ImageIcon,
+  ZoomInIcon,
+  ZoomOutIcon,
 } from '@/components/Icons';
 import { saveVersion, updateDoc, listFolders, DocEntry } from '@/lib/db';
 import { autoDetectFolderName } from '@/lib/folderHelper';
@@ -94,6 +96,40 @@ export default function Home() {
   const [isWallpaperOpen, setIsWallpaperOpen] = useState(false);
   const [customBgUrl, setCustomBgUrl] = useState('');
   const wallpaperPopoverRef = useRef<HTMLDivElement>(null);
+
+  // Zoom state for text box sizing (11px to 26px, default 15px)
+  const [editorFontSize, setEditorFontSize] = useState<number>(15);
+
+  useEffect(() => {
+    const savedSize = localStorage.getItem('editorFontSize');
+    if (savedSize) {
+      const parsed = parseInt(savedSize, 10);
+      if (!isNaN(parsed) && parsed >= 11 && parsed <= 28) {
+        setEditorFontSize(parsed);
+      }
+    }
+  }, []);
+
+  function handleZoomIn() {
+    setEditorFontSize((prev) => {
+      const next = Math.min(26, prev + 2);
+      localStorage.setItem('editorFontSize', next.toString());
+      return next;
+    });
+  }
+
+  function handleZoomOut() {
+    setEditorFontSize((prev) => {
+      const next = Math.max(11, prev - 2);
+      localStorage.setItem('editorFontSize', next.toString());
+      return next;
+    });
+  }
+
+  function handleZoomReset() {
+    setEditorFontSize(15);
+    localStorage.setItem('editorFontSize', '15');
+  }
 
   const previewRef = useRef<HTMLDivElement>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -709,13 +745,51 @@ export default function Home() {
       {/* Main content — split pane */}
       <main className="app-main">
         <div className="split-pane">
-          <div className={`pane pane-editor ${activeTab !== 'editor' ? 'hidden-mobile' : ''}`}>
+          <div
+            className={`pane pane-editor ${activeTab !== 'editor' ? 'hidden-mobile' : ''}`}
+            style={{ ['--editor-font-size' as string]: `${editorFontSize}px` }}
+          >
+            {/* Floating Zoom Controls to fill the box */}
+            <div className="editor-zoom-bar">
+              <button
+                type="button"
+                className="btn-zoom"
+                onClick={handleZoomOut}
+                disabled={editorFontSize <= 11}
+                title="Zoom out text"
+                aria-label="Zoom out text"
+              >
+                <ZoomOutIcon size={14} />
+              </button>
+              <button
+                type="button"
+                className="btn-zoom-label"
+                onClick={handleZoomReset}
+                title="Click to reset zoom to 100%"
+              >
+                {Math.round((editorFontSize / 15) * 100)}%
+              </button>
+              <button
+                type="button"
+                className="btn-zoom"
+                onClick={handleZoomIn}
+                disabled={editorFontSize >= 26}
+                title="Zoom in text to fill the box"
+                aria-label="Zoom in text to fill the box"
+              >
+                <ZoomInIcon size={14} />
+              </button>
+            </div>
+
             <Editor value={markdown} onChange={handleChange} />
           </div>
 
           <div className="pane-divider" />
 
-          <div className={`pane pane-preview ${activeTab !== 'preview' ? 'hidden-mobile' : ''}`}>
+          <div
+            className={`pane pane-preview ${activeTab !== 'preview' ? 'hidden-mobile' : ''}`}
+            style={{ ['--preview-font-scale' as string]: `${editorFontSize / 15}` }}
+          >
             <Preview markdown={markdown} theme={previewTheme} previewRef={previewRef} />
           </div>
         </div>
