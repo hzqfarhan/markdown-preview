@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { markdownToHtml } from '@/lib/markdown';
+import { EmptyDocIllustration } from './Icons';
 
 interface PreviewProps {
   markdown: string;
@@ -11,7 +12,6 @@ interface PreviewProps {
 
 export default function Preview({ markdown, theme, previewRef }: PreviewProps) {
   const [html, setHtml] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -22,18 +22,14 @@ export default function Preview({ markdown, theme, previewRef }: PreviewProps) {
         return;
       }
 
-      setIsLoading(true);
       try {
         const result = await markdownToHtml(markdown);
         if (!cancelled) setHtml(result);
       } catch (err) {
         console.error('Markdown render error:', err);
-      } finally {
-        if (!cancelled) setIsLoading(false);
       }
     }
 
-    // Small debounce so we don't re-render on every keystroke
     const timer = setTimeout(render, 150);
     return () => {
       cancelled = true;
@@ -44,10 +40,12 @@ export default function Preview({ markdown, theme, previewRef }: PreviewProps) {
   if (!markdown.trim()) {
     return (
       <div className="empty-preview" data-preview-theme={theme}>
-        <div className="empty-preview-icon">🖍️</div>
+        <div className="empty-preview-icon">
+          <EmptyDocIllustration size={64} />
+        </div>
         <h3>Nothing to preview yet</h3>
         <p style={{ color: 'var(--crayon-text-muted)', fontSize: 'var(--font-size-base)' }}>
-          Start writing markdown on the left and your preview will appear here!
+          Start writing markdown in the editor and your live preview will appear here.
         </p>
       </div>
     );

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { ExportIcon, PdfDocIcon, WordDocIcon, GoogleDriveIcon, ChevronDownIcon } from './Icons';
 
 interface ExportMenuProps {
   onExportPdf: () => void;
@@ -36,7 +37,9 @@ export default function ExportMenu({ onExportPdf, onExportDocx, onExportGoogleDo
         aria-haspopup="true"
         title="Export document"
       >
-        📤 Export
+        <ExportIcon size={16} />
+        <span>Export</span>
+        <ChevronDownIcon size={14} />
       </button>
 
       <div className={`dropdown-menu ${isOpen ? 'open' : ''}`} role="menu">
@@ -45,14 +48,16 @@ export default function ExportMenu({ onExportPdf, onExportDocx, onExportGoogleDo
           onClick={() => handleAction(onExportPdf)}
           role="menuitem"
         >
-          📕 Export as PDF
+          <PdfDocIcon size={18} className="text-pink" />
+          <span>Export as PDF</span>
         </button>
         <button
           className="dropdown-item"
           onClick={() => handleAction(onExportDocx)}
           role="menuitem"
         >
-          📘 Export as DOCX
+          <WordDocIcon size={18} className="text-purple" />
+          <span>Export as DOCX</span>
         </button>
         <div className="dropdown-divider" />
         <button
@@ -60,7 +65,8 @@ export default function ExportMenu({ onExportPdf, onExportDocx, onExportGoogleDo
           onClick={() => handleAction(onExportGoogleDocs)}
           role="menuitem"
         >
-          📗 Export to Google Docs
+          <GoogleDriveIcon size={18} className="text-pink" />
+          <span>Export to Google Docs</span>
         </button>
       </div>
     </div>

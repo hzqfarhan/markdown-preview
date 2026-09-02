@@ -55,7 +55,7 @@ export default function CodeMirrorEditor({ value, onChange }: CodeMirrorEditorPr
       height="100%"
       extensions={[markdown(), crayonTheme]}
       onChange={(val) => onChange(val)}
-      placeholder="✏️ Start writing your markdown here..."
+      placeholder="Start writing your markdown here..."
       basicSetup={{
         lineNumbers: true,
         highlightActiveLineGutter: true,

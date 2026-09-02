@@ -7,48 +7,63 @@ import ThemeSwitcher from '@/components/ThemeSwitcher';
 import ExportMenu from '@/components/ExportMenu';
 import HistoryPanel from '@/components/HistoryPanel';
 import Toast, { ToastData } from '@/components/Toast';
-import { saveVersion, updateDoc, DocEntry } from '@/lib/db';
+import {
+  CrayonIcon,
+  FolderIcon,
+  FilePlusIcon,
+  WandIcon,
+  HistoryIcon,
+  EditIcon,
+  CheckIcon,
+  CloseIcon,
+  EyeIcon,
+} from '@/components/Icons';
+import { saveVersion, updateDoc, listFolders, DocEntry } from '@/lib/db';
+import { autoDetectFolderName } from '@/lib/folderHelper';
 import { exportToPdf } from '@/lib/exportPdf';
 import { exportToDocx } from '@/lib/exportDocx';
 
 // Dynamic import Editor to avoid SSR
 const Editor = dynamic(() => import('@/components/Editor'), { ssr: false });
 
-const DEFAULT_MARKDOWN = `# Welcome to Markdown Previewer 🖍️
+const DEFAULT_MARKDOWN = `# Welcome to Markdown Previewer
 
-Write your **markdown** here and see it come to life!
+Write your markdown here and see it come to life with a hand-drawn crayon aesthetic.
 
 ## Features
 
-- ✏️ **Live Preview** — See changes as you type
-- 🎨 **Crayon Themes** — Switch between reading styles
-- 📚 **History** — Auto-saved, never lose your work
-- 📤 **Export** — PDF, DOCX, or Google Docs
-- 🤖 **AI Refine** — Clean up messy text into markdown
-- 📱 **PWA** — Install and use offline
+- Live Preview — Instant rendering as you type
+- Crayon Themes — Select your preferred reading style
+- Smart Folders — Auto-names your folders, with full edit control
+- History — Auto-saved locally in your browser
+- Export — Download as PDF, DOCX, or Google Docs
+- AI Refine — Clean up unstructured notes into tidy markdown
+- PWA — Fully offline-capable application
 
-## Try some markdown
+## Sample Code
 
 \`\`\`javascript
-function hello() {
-  console.log("Hello, world! 🌍");
+function createGreeting(name) {
+  return "Hello, " + name + "! Welcome to the markdown editor.";
 }
 \`\`\`
 
-> "The best way to predict the future is to create it." — Peter Drucker
+> "Creativity is intelligence having fun." — Albert Einstein
 
-### A table
+### Checklist
 
-| Feature | Status |
-|---------|--------|
-| Editor  | ✅ Done |
-| Preview | ✅ Done |
-| Export  | ✅ Done |
-| AI      | ✅ Done |
+- [x] Crayon styled pink and purple UI
+- [x] No emojis anywhere in the interface
+- [x] Automatic folder naming with custom user edits
+- [x] Client-side exports for PDF, DOCX, and Google Docs
 
----
+### Comparison Table
 
-*Happy writing!* 🎉
+| Feature | Status | Notes |
+| :--- | :--- | :--- |
+| Live Preview | Active | Instant updates |
+| Auto-Folders | Active | Editable anytime |
+| Local Storage | Active | Private and offline |
 `;
 
 export default function Home() {
@@ -60,7 +75,20 @@ export default function Home() {
   const [isRefining, setIsRefining] = useState(false);
   const [isSaved, setIsSaved] = useState(true);
   const [currentDocId, setCurrentDocId] = useState<number | null>(null);
-  const [docTitle, setDocTitle] = useState('Untitled');
+  const [docTitle, setDocTitle] = useState('Welcome to Markdown Previewer');
+  const [folder, setFolder] = useState('Guides & Docs');
+  const [folderCustomized, setFolderCustomized] = useState(false);
+  const [existingFolders, setExistingFolders] = useState<string[]>([]);
+
+  // Folder edit state
+  const [isEditingFolder, setIsEditingFolder] = useState(false);
+  const [folderInputVal, setFolderInputVal] = useState('');
+  const folderPopoverRef = useRef<HTMLDivElement>(null);
+
+  // Document title edit state
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [titleInputVal, setTitleInputVal] = useState('');
+
   const previewRef = useRef<HTMLDivElement>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -75,6 +103,24 @@ export default function Home() {
     localStorage.setItem('previewTheme', previewTheme);
   }, [previewTheme]);
 
+  // Load existing folders for suggestions
+  useEffect(() => {
+    listFolders().then((f) => setExistingFolders(f)).catch(() => {});
+  }, [currentDocId, folder]);
+
+  // Click outside folder popover to close
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (folderPopoverRef.current && !folderPopoverRef.current.contains(e.target as Node)) {
+        setIsEditingFolder(false);
+      }
+    }
+    if (isEditingFolder) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isEditingFolder]);
+
   // Toast helper
   const addToast = useCallback((message: string, type: 'success' | 'error' | 'info' = 'info') => {
     const id = Date.now().toString();
@@ -84,44 +130,56 @@ export default function Home() {
     }, 4000);
   }, []);
 
-  // Auto-save with debounce
-  const handleChange = useCallback(
-    (value: string) => {
-      setMarkdown(value);
-      setIsSaved(false);
-
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = setTimeout(async () => {
-        try {
-          const title = extractTitle(value);
-          setDocTitle(title);
-
-          if (currentDocId) {
-            await updateDoc(currentDocId, title, value);
-          } else {
-            const id = await saveVersion(title, value);
-            setCurrentDocId(id);
-          }
-          setIsSaved(true);
-        } catch (err) {
-          console.error('Auto-save failed:', err);
-        }
-      }, 2000);
-    },
-    [currentDocId]
-  );
-
   // Extract title from first heading
   function extractTitle(md: string): string {
     const match = md.match(/^#\s+(.+)$/m);
     return match ? match[1].replace(/[*_~`]/g, '').trim() : 'Untitled';
   }
 
+  // Auto-save with debounce
+  const handleChange = useCallback(
+    (value: string) => {
+      setMarkdown(value);
+      setIsSaved(false);
+
+      // Auto update title if user hasn't explicitly locked it
+      const autoTitle = extractTitle(value);
+      if (!isEditingTitle) {
+        setDocTitle(autoTitle);
+      }
+
+      // Auto update folder if not customized by user
+      let currentFolder = folder;
+      if (!folderCustomized) {
+        currentFolder = autoDetectFolderName(value, autoTitle);
+        setFolder(currentFolder);
+      }
+
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = setTimeout(async () => {
+        try {
+          if (currentDocId) {
+            await updateDoc(currentDocId, autoTitle, value, currentFolder, folderCustomized);
+          } else {
+            const id = await saveVersion(autoTitle, value, currentFolder, folderCustomized);
+            setCurrentDocId(id);
+          }
+          setIsSaved(true);
+        } catch (err) {
+          console.error('Auto-save failed:', err);
+        }
+      }, 1500);
+    },
+    [currentDocId, folder, folderCustomized, isEditingTitle]
+  );
+
   // Restore from history
   function handleRestore(doc: DocEntry) {
     setMarkdown(doc.content);
     setCurrentDocId(doc.id!);
     setDocTitle(doc.title);
+    setFolder(doc.folder || 'General Notes');
+    setFolderCustomized(!!doc.folderCustomized);
     setIsSaved(true);
     setHistoryOpen(false);
     addToast(`Restored "${doc.title}"`, 'success');
@@ -132,8 +190,60 @@ export default function Home() {
     setMarkdown('');
     setCurrentDocId(null);
     setDocTitle('Untitled');
+    setFolder('Drafts');
+    setFolderCustomized(false);
     setIsSaved(true);
     addToast('New document created', 'info');
+  }
+
+  // Start folder edit
+  function handleStartFolderEdit() {
+    setFolderInputVal(folder);
+    setIsEditingFolder(true);
+  }
+
+  // Save folder edit
+  async function handleSaveFolder(newFolderName?: string) {
+    const targetFolder = (newFolderName ?? folderInputVal).trim();
+    if (!targetFolder) return;
+
+    setFolder(targetFolder);
+    setFolderCustomized(true);
+    setIsEditingFolder(false);
+
+    if (currentDocId) {
+      await updateDoc(currentDocId, docTitle, markdown, targetFolder, true);
+    }
+    addToast(`Moved to folder "${targetFolder}"`, 'success');
+  }
+
+  // Reset to auto folder
+  async function handleResetToAutoFolder() {
+    const detected = autoDetectFolderName(markdown, docTitle);
+    setFolder(detected);
+    setFolderCustomized(false);
+    setIsEditingFolder(false);
+
+    if (currentDocId) {
+      await updateDoc(currentDocId, docTitle, markdown, detected, false);
+    }
+    addToast(`Folder auto-set to "${detected}"`, 'info');
+  }
+
+  // Title edit
+  function handleStartTitleEdit() {
+    setTitleInputVal(docTitle);
+    setIsEditingTitle(true);
+  }
+
+  async function handleSaveTitle() {
+    const trimmed = titleInputVal.trim() || 'Untitled';
+    setDocTitle(trimmed);
+    setIsEditingTitle(false);
+
+    if (currentDocId) {
+      await updateDoc(currentDocId, trimmed, markdown, folder, folderCustomized);
+    }
   }
 
   // Export PDF
@@ -144,8 +254,8 @@ export default function Home() {
     }
     try {
       await exportToPdf(previewRef.current, `${docTitle}.pdf`);
-      addToast('PDF exported! 📕', 'success');
-    } catch (err) {
+      addToast('PDF exported successfully', 'success');
+    } catch {
       addToast('PDF export failed', 'error');
     }
   }
@@ -154,20 +264,18 @@ export default function Home() {
   async function handleExportDocx() {
     try {
       await exportToDocx(markdown, `${docTitle}.docx`);
-      addToast('DOCX exported! 📘', 'success');
-    } catch (err) {
+      addToast('DOCX exported successfully', 'success');
+    } catch {
       addToast('DOCX export failed', 'error');
     }
   }
 
   // Export Google Docs
   function handleExportGoogleDocs() {
-    // Check if we have a Google token (from OAuth callback)
     const params = new URLSearchParams(window.location.search);
     const token = params.get('google_token');
 
     if (!token) {
-      // Redirect to OAuth
       window.location.href = '/api/google/auth';
       return;
     }
@@ -185,7 +293,7 @@ export default function Home() {
       .then((data) => {
         if (data.url) {
           window.open(data.url, '_blank');
-          addToast('Exported to Google Docs! 📗', 'success');
+          addToast('Exported to Google Docs', 'success');
         } else {
           addToast('Google Docs export failed', 'error');
         }
@@ -213,15 +321,14 @@ export default function Home() {
       const { markdown: refined, provider } = await res.json();
       setMarkdown(refined);
       setIsSaved(false);
-      addToast(`Refined with ${provider} ✨`, 'success');
-    } catch (err) {
+      addToast(`Refined with ${provider}`, 'success');
+    } catch {
       addToast('AI refinement failed — check API keys', 'error');
     } finally {
       setIsRefining(false);
     }
   }
 
-  // Word & char count
   const charCount = markdown.length;
   const wordCount = markdown.trim() ? markdown.trim().split(/\s+/).length : 0;
 
@@ -230,29 +337,164 @@ export default function Home() {
       {/* Header */}
       <header className="app-header">
         <div className="app-logo">
-          <span className="app-logo-icon">🖍️</span>
+          <span className="app-logo-icon">
+            <CrayonIcon size={24} />
+          </span>
           <span>Markdown Previewer</span>
         </div>
 
+        {/* Document breadcrumb: Folder / Title */}
+        <div className="doc-breadcrumb-bar">
+          <div className="folder-pill-container" ref={folderPopoverRef}>
+            <button
+              type="button"
+              className={`folder-pill ${folderCustomized ? 'customized' : 'auto-named'}`}
+              onClick={handleStartFolderEdit}
+              title={
+                folderCustomized
+                  ? 'Custom folder (click to edit)'
+                  : 'Auto-named folder (click to edit)'
+              }
+            >
+              <FolderIcon size={14} className="text-purple" />
+              <span className="folder-pill-text">{folder}</span>
+              <span className="folder-status-tag">
+                {folderCustomized ? 'Custom' : 'Auto'}
+              </span>
+            </button>
+
+            {/* Folder edit popover */}
+            {isEditingFolder && (
+              <div className="folder-popover">
+                <div className="folder-popover-header">
+                  <span className="font-heading text-purple">Folder Name</span>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-icon btn-xs"
+                    onClick={() => setIsEditingFolder(false)}
+                  >
+                    <CloseIcon size={12} />
+                  </button>
+                </div>
+                <div className="folder-popover-input-group">
+                  <input
+                    type="text"
+                    className="input input-sm"
+                    value={folderInputVal}
+                    onChange={(e) => setFolderInputVal(e.target.value)}
+                    placeholder="Enter folder name..."
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleSaveFolder();
+                      if (e.key === 'Escape') setIsEditingFolder(false);
+                    }}
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-sm"
+                    onClick={() => handleSaveFolder()}
+                  >
+                    Save
+                  </button>
+                </div>
+
+                {/* Existing folder quick-picks */}
+                {existingFolders.length > 0 && (
+                  <div className="folder-suggestions">
+                    <span className="folder-suggestions-label">Existing folders:</span>
+                    <div className="folder-suggestions-list">
+                      {existingFolders.map((f) => (
+                        <button
+                          key={f}
+                          type="button"
+                          className="folder-suggestion-chip"
+                          onClick={() => handleSaveFolder(f)}
+                        >
+                          {f}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {folderCustomized && (
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-xs text-pink mt-sm"
+                    onClick={handleResetToAutoFolder}
+                  >
+                    Reset to auto-detected folder
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          <span className="breadcrumb-separator">/</span>
+
+          {/* Document Title Editable */}
+          <div className="title-container">
+            {isEditingTitle ? (
+              <div className="title-edit-group">
+                <input
+                  type="text"
+                  className="input input-xs title-input"
+                  value={titleInputVal}
+                  onChange={(e) => setTitleInputVal(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSaveTitle();
+                    if (e.key === 'Escape') setIsEditingTitle(false);
+                  }}
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-icon btn-xs text-pink"
+                  onClick={handleSaveTitle}
+                  title="Save title"
+                >
+                  <CheckIcon size={12} />
+                </button>
+              </div>
+            ) : (
+              <div
+                className="doc-title-display"
+                onClick={handleStartTitleEdit}
+                title="Click to edit document title"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === 'Enter' && handleStartTitleEdit()}
+              >
+                <span className="doc-title-text">{docTitle}</span>
+                <EditIcon size={12} className="doc-title-edit-icon" />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Toolbar items */}
         <div className="app-toolbar">
           <ThemeSwitcher value={previewTheme} onChange={setPreviewTheme} />
 
           <button
+            type="button"
             className="btn btn-ghost btn-icon wiggle"
             onClick={handleNewDoc}
             title="New document"
+            aria-label="New document"
           >
-            📄
+            <FilePlusIcon size={18} />
           </button>
 
           <button
+            type="button"
             className={`btn btn-ai btn-sm ${isRefining ? 'disabled' : ''}`}
             onClick={handleRefine}
             disabled={isRefining}
             title="Refine with AI"
           >
-            {isRefining ? <span className="spinner" /> : '✨'}
-            {isRefining ? 'Refining...' : 'AI Refine'}
+            {isRefining ? <span className="spinner" /> : <WandIcon size={16} />}
+            <span>{isRefining ? 'Refining...' : 'AI Refine'}</span>
           </button>
 
           <ExportMenu
@@ -262,11 +504,13 @@ export default function Home() {
           />
 
           <button
+            type="button"
             className="btn btn-ghost btn-icon wiggle"
             onClick={() => setHistoryOpen(true)}
-            title="Document history"
+            title="Document library and folders"
+            aria-label="Document library and folders"
           >
-            📚
+            <HistoryIcon size={18} />
           </button>
         </div>
       </header>
@@ -274,16 +518,20 @@ export default function Home() {
       {/* Mobile tabs */}
       <div className="mobile-tabs">
         <button
+          type="button"
           className={`mobile-tab ${activeTab === 'editor' ? 'active' : ''}`}
           onClick={() => setActiveTab('editor')}
         >
-          ✏️ Editor
+          <CrayonIcon size={16} />
+          <span>Editor</span>
         </button>
         <button
+          type="button"
           className={`mobile-tab ${activeTab === 'preview' ? 'active' : ''}`}
           onClick={() => setActiveTab('preview')}
         >
-          👁️ Preview
+          <EyeIcon size={16} />
+          <span>Preview</span>
         </button>
       </div>
 
@@ -305,11 +553,15 @@ export default function Home() {
       {/* Status bar */}
       <footer className="status-bar">
         <div className="status-bar-left">
-          <span>
+          <span className="status-indicator">
             <span className={`status-dot ${isSaved ? 'status-dot-saved' : 'status-dot-unsaved'}`} />
             {isSaved ? 'Saved' : 'Unsaved'}
           </span>
-          <span>{docTitle}</span>
+          <span className="status-folder">
+            <FolderIcon size={12} className="text-purple" />
+            <span>{folder}</span>
+          </span>
+          <span className="status-doc-title">{docTitle}</span>
         </div>
         <div className="status-bar-right">
           <span>{wordCount} words</span>
@@ -317,7 +569,7 @@ export default function Home() {
         </div>
       </footer>
 
-      {/* History drawer */}
+      {/* History and folders drawer */}
       <HistoryPanel
         isOpen={historyOpen}
         onClose={() => setHistoryOpen(false)}

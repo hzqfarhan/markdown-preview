@@ -1,11 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-
 const THEMES = [
-  { id: 'crayon', label: '🖍️ Crayon' },
-  { id: 'github', label: '📄 GitHub' },
-  { id: 'sepia', label: '📜 Sepia' },
+  { id: 'crayon', label: 'Crayon' },
+  { id: 'github', label: 'GitHub' },
+  { id: 'sepia', label: 'Sepia' },
 ] as const;
 
 interface ThemeSwitcherProps {
