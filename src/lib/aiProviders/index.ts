@@ -1,16 +1,17 @@
-import { refineWithAnthropic } from './anthropic';
-import { refineWithOpenAI } from './openai';
 import { refineWithGemini } from './gemini';
+import { refineWithOpenAI } from './openai';
+import { refineWithAnthropic } from './anthropic';
+import { heuristicTextToMarkdown } from './rules';
 
 type Provider = (text: string) => Promise<string>;
 
 const providers: { name: string; fn: Provider }[] = [
-  { name: 'anthropic', fn: refineWithAnthropic },
-  { name: 'openai', fn: refineWithOpenAI },
-  { name: 'gemini', fn: refineWithGemini },
+  { name: 'Gemini', fn: refineWithGemini },
+  { name: 'OpenAI', fn: refineWithOpenAI },
+  { name: 'Anthropic', fn: refineWithAnthropic },
 ];
 
-const TIMEOUT_MS = 8000;
+const TIMEOUT_MS = 10000;
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return Promise.race([
@@ -22,17 +23,22 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 }
 
 export async function refineToMarkdown(text: string): Promise<{ markdown: string; provider: string }> {
-  let lastError: unknown;
-
   for (const { name, fn } of providers) {
     try {
       const markdown = await withTimeout(fn(text), TIMEOUT_MS);
       if (markdown?.trim()) return { markdown, provider: name };
-    } catch (err) {
-      lastError = err;
+    } catch {
+      // Continue to next available provider
       continue;
     }
   }
 
-  throw new Error(`All providers failed. Last error: ${lastError}`);
+  // Graceful offline fallback: If no API keys are set or all remote providers timed out,
+  // execute the built-in heuristic Text-to-Markdown engine
+  const offlineFormatted = heuristicTextToMarkdown(text);
+  if (offlineFormatted.trim()) {
+    return { markdown: offlineFormatted, provider: 'Smart Formatter (Offline)' };
+  }
+
+  throw new Error('All AI providers failed and text could not be formatted.');
 }

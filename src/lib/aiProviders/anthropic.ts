@@ -1,18 +1,26 @@
+import { TEXT_TO_MARKDOWN_SYSTEM_PROMPT, cleanAIOutput } from './rules';
+
 export async function refineWithAnthropic(text: string): Promise<string> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey || apiKey.startsWith('...') || apiKey.trim() === '') {
+    throw new Error('ANTHROPIC_API_KEY is not configured');
+  }
+
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
-      'x-api-key': process.env.ANTHROPIC_API_KEY!,
+      'x-api-key': apiKey,
       'anthropic-version': '2023-06-01',
       'content-type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 2000,
+      model: 'claude-3-5-sonnet-latest',
+      max_tokens: 4000,
+      system: TEXT_TO_MARKDOWN_SYSTEM_PROMPT,
       messages: [
         {
           role: 'user',
-          content: `Convert the following text into clean, well-structured Markdown. Preserve meaning; only add headings/lists where structurally implied. Return only the markdown, no commentary.\n\n${text}`,
+          content: `Convert the following unformatted text into clean, structured Markdown:\n\n${text}`,
         },
       ],
     }),
@@ -20,5 +28,6 @@ export async function refineWithAnthropic(text: string): Promise<string> {
 
   if (!res.ok) throw new Error(`Anthropic failed: ${res.status}`);
   const data = await res.json();
-  return data.content?.[0]?.text ?? '';
+  const rawText = data.content?.[0]?.text ?? '';
+  return cleanAIOutput(rawText);
 }
