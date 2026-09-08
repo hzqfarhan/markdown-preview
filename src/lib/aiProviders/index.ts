@@ -28,7 +28,7 @@ const allProviders: ProviderEntry[] = [
   { name: 'Anthropic', fn: refineWithAnthropic, keyName: 'anthropic' },
 ];
 
-const TIMEOUT_MS = 12000;
+const TIMEOUT_MS = 30000;
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return Promise.race([

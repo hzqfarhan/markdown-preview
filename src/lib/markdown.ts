@@ -1,16 +1,18 @@
 import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
 import remarkRehype from 'remark-rehype';
-import rehypeSanitize from 'rehype-sanitize';
+import rehypeKatex from 'rehype-katex';
 import rehypeStringify from 'rehype-stringify';
 
 export async function markdownToHtml(markdown: string): Promise<string> {
   const file = await unified()
     .use(remarkParse)
+    .use(remarkMath)
     .use(remarkGfm)
     .use(remarkRehype)
-    .use(rehypeSanitize)
+    .use(rehypeKatex)
     .use(rehypeStringify)
     .process(markdown);
 
