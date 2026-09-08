@@ -15,7 +15,7 @@ export async function refineWithAnthropic(text: string, customApiKey?: string): 
     },
     body: JSON.stringify({
       model: 'claude-3-5-sonnet-latest',
-      max_tokens: 4000,
+      max_tokens: 8192,
       system: TEXT_TO_MARKDOWN_SYSTEM_PROMPT,
       messages: [
         {

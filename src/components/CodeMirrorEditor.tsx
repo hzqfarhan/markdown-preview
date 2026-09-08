@@ -9,6 +9,26 @@ interface CodeMirrorEditorProps {
   onChange: (value: string) => void;
 }
 
+// Custom paste handler to normalize carriage returns and line separators
+const pasteHandler = EditorView.domEventHandlers({
+  paste(event, view) {
+    const clipboardText = event.clipboardData?.getData('text/plain');
+    if (!clipboardText) return false;
+
+    // If text contains carriage returns or unicode line separators, normalize to \n
+    if (/[\r\u2028\u2029]/.test(clipboardText)) {
+      event.preventDefault();
+      const normalized = clipboardText
+        .replace(/\r\n/g, '\n')
+        .replace(/[\r\u2028\u2029]/g, '\n');
+
+      view.dispatch(view.state.replaceSelection(normalized));
+      return true;
+    }
+    return false;
+  },
+});
+
 // Custom theme for the crayon aesthetic
 const crayonTheme = EditorView.theme({
   '&': {
@@ -17,10 +37,17 @@ const crayonTheme = EditorView.theme({
   },
   '.cm-scroller': {
     overflow: 'auto',
+    fontFamily: "'Fira Code', monospace",
   },
   '.cm-content': {
     fontFamily: "'Fira Code', monospace",
     caretColor: '#E91E8C',
+    whiteSpace: 'pre-wrap !important',
+    wordBreak: 'break-word !important',
+  },
+  '.cm-line': {
+    wordBreak: 'break-word !important',
+    padding: '1px 4px',
   },
   '&.cm-focused .cm-cursor': {
     borderLeftColor: '#E91E8C',
@@ -53,7 +80,7 @@ export default function CodeMirrorEditor({ value, onChange }: CodeMirrorEditorPr
     <CodeMirror
       value={value}
       height="100%"
-      extensions={[markdown(), crayonTheme]}
+      extensions={[markdown(), crayonTheme, EditorView.lineWrapping, pasteHandler]}
       onChange={(val) => onChange(val)}
       placeholder="Start writing your markdown here..."
       basicSetup={{

@@ -27,7 +27,7 @@ export async function refineWithGemini(text: string, customApiKey?: string): Pro
           },
         ],
         generationConfig: {
-          maxOutputTokens: 4000,
+          maxOutputTokens: 8192,
           temperature: 0.2,
         },
       }),

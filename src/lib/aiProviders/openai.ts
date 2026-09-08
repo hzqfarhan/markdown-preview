@@ -25,7 +25,7 @@ export async function refineWithOpenAI(text: string, customApiKey?: string): Pro
           content: `Convert the following unformatted text into clean, structured Markdown:\n\n${text}`,
         },
       ],
-      max_tokens: 4000,
+      max_tokens: 8192,
     }),
   });
 
