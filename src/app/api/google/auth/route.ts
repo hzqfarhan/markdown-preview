@@ -12,12 +12,18 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL('/?error=missing_credentials', req.url));
   }
 
-  const oauth2Client = getOAuthClient();
+  // Derive redirect URI dynamically or fallback to env
+  const origin = req.nextUrl.origin;
+  const redirectUri =
+    process.env.GOOGLE_REDIRECT_URI?.trim() || `${origin}/api/google/auth`;
+
+  const oauth2Client = getOAuthClient(redirectUri);
 
   if (!code) {
     const url = oauth2Client.generateAuthUrl({
       access_type: 'offline',
       prompt: 'consent',
+      redirect_uri: redirectUri,
       scope: [
         'openid',
         'https://www.googleapis.com/auth/userinfo.profile',
@@ -30,7 +36,10 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const { tokens } = await oauth2Client.getToken(code);
+    const { tokens } = await oauth2Client.getToken({
+      code,
+      redirect_uri: redirectUri,
+    });
     oauth2Client.setCredentials(tokens);
 
     // Fetch user profile from Google
