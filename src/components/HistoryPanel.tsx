@@ -16,15 +16,33 @@ import {
   EmptyDocIllustration,
   GoogleIcon,
   DatabaseIcon,
+  SettingsIcon,
 } from './Icons';
+
+export interface UserProfile {
+  name: string;
+  email: string;
+  picture?: string;
+}
 
 interface HistoryPanelProps {
   isOpen: boolean;
   onClose: () => void;
   onRestore: (doc: DocEntry) => void;
+  user?: UserProfile | null;
+  onSignOut?: () => Promise<void>;
+  onOpenSettings?: () => void;
 }
 
-export default function HistoryPanel({ isOpen, onClose, onRestore }: HistoryPanelProps) {
+export default function HistoryPanel({
+  isOpen,
+  onClose,
+  onRestore,
+  user,
+  onSignOut,
+  onOpenSettings,
+}: HistoryPanelProps) {
+
   const docs = useLiveQuery(() => db.docs.orderBy('updatedAt').reverse().toArray());
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [collapsedFolders, setCollapsedFolders] = useState<Record<string, boolean>>({});
@@ -275,28 +293,85 @@ export default function HistoryPanel({ isOpen, onClose, onRestore }: HistoryPane
           )}
         </div>
 
-        {/* Drawer footer: Local storage status & Google Login */}
+        {/* Drawer footer: User Profile or Local Storage & Google Login */}
         <div className="drawer-footer">
-          <div className="storage-status-card">
-            <div className="storage-status-header">
-              <span className="storage-status-pill">
-                <span className="status-dot status-dot-saved" />
-                <span>Local Storage Active</span>
-              </span>
-              <DatabaseIcon size={14} className="text-purple" />
+          {user ? (
+            <div className="storage-status-card user-connected-card">
+              <div className="storage-status-header">
+                <span className="storage-status-pill">
+                  <span className="status-dot status-dot-saved" />
+                  <span>Google Connected</span>
+                </span>
+                <GoogleIcon size={14} />
+              </div>
+              <div className="drawer-user-info">
+                {user.picture ? (
+                  <img src={user.picture} alt={user.name} className="drawer-user-avatar" />
+                ) : (
+                  <div className="drawer-user-fallback">{user.name.charAt(0).toUpperCase()}</div>
+                )}
+                <div className="drawer-user-meta">
+                  <span className="drawer-user-name font-heading">{user.name}</span>
+                  <span className="drawer-user-email">{user.email}</span>
+                </div>
+              </div>
+              <div className="drawer-footer-actions">
+                {onOpenSettings && (
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-xs text-purple"
+                    onClick={onOpenSettings}
+                  >
+                    API & Settings
+                  </button>
+                )}
+                {onSignOut && (
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-xs text-pink"
+                    onClick={onSignOut}
+                  >
+                    Sign Out
+                  </button>
+                )}
+              </div>
             </div>
-            <p className="storage-status-desc">
-              All documents are currently saved offline in your browser. Sign in with Google to enable cloud database sync and access your history anywhere.
-            </p>
-            <a
-              href="/api/google/auth"
-              className="btn btn-google"
-              title="Sign in with Google to sync notes to cloud database"
-            >
-              <GoogleIcon size={16} />
-              <span>Continue with Google</span>
-            </a>
-          </div>
+          ) : (
+            <div className="storage-status-card">
+              <div className="storage-status-header">
+                <span className="storage-status-pill">
+                  <span className="status-dot status-dot-saved" />
+                  <span>Local Storage Active</span>
+                </span>
+                <DatabaseIcon size={14} className="text-purple" />
+              </div>
+              <p className="storage-status-desc">
+                All documents are saved offline in your browser. Sign in with Google for 1-click export to Google Docs.
+              </p>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <a
+                  href="/api/google/auth"
+                  className="btn btn-google"
+                  style={{ flex: 1 }}
+                  title="Sign in with Google"
+                >
+                  <GoogleIcon size={16} />
+                  <span>Continue with Google</span>
+                </a>
+                {onOpenSettings && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-icon btn-sm"
+                    onClick={onOpenSettings}
+                    title="API & Account Settings"
+                    aria-label="API and Account Settings"
+                  >
+                    <SettingsIcon size={16} />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </>

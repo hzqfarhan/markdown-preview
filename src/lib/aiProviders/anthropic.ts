@@ -1,7 +1,7 @@
 import { TEXT_TO_MARKDOWN_SYSTEM_PROMPT, cleanAIOutput } from './rules';
 
-export async function refineWithAnthropic(text: string): Promise<string> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+export async function refineWithAnthropic(text: string, customApiKey?: string): Promise<string> {
+  const apiKey = (customApiKey && customApiKey.trim()) || process.env.ANTHROPIC_API_KEY;
   if (!apiKey || apiKey.startsWith('...') || apiKey.trim() === '') {
     throw new Error('ANTHROPIC_API_KEY is not configured');
   }
@@ -26,8 +26,14 @@ export async function refineWithAnthropic(text: string): Promise<string> {
     }),
   });
 
-  if (!res.ok) throw new Error(`Anthropic failed: ${res.status}`);
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    const msg = errorData?.error?.message || `Anthropic failed with status ${res.status}`;
+    throw new Error(msg);
+  }
+
   const data = await res.json();
   const rawText = data.content?.[0]?.text ?? '';
   return cleanAIOutput(rawText);
 }
+

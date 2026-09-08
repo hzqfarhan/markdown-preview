@@ -6,6 +6,7 @@ import Preview from '@/components/Preview';
 import ThemeSwitcher from '@/components/ThemeSwitcher';
 import ExportMenu from '@/components/ExportMenu';
 import HistoryPanel from '@/components/HistoryPanel';
+import ApiSettingsModal, { UserProfile } from '@/components/ApiSettingsModal';
 import Toast, { ToastData } from '@/components/Toast';
 import {
   CrayonIcon,
@@ -20,11 +21,13 @@ import {
   ImageIcon,
   ZoomInIcon,
   ZoomOutIcon,
+  SettingsIcon,
 } from '@/components/Icons';
 import { saveVersion, updateDoc, listFolders, DocEntry } from '@/lib/db';
 import { autoDetectFolderName } from '@/lib/folderHelper';
 import { exportToPdf } from '@/lib/exportPdf';
 import { exportToDocx } from '@/lib/exportDocx';
+
 
 // Dynamic import Editor to avoid SSR
 const Editor = dynamic(() => import('@/components/Editor'), { ssr: false });
@@ -175,6 +178,10 @@ export default function Home() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isEditingFolder, isWallpaperOpen]);
 
+  // User profile and settings state
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
   // Toast helper
   const addToast = useCallback((message: string, type: 'success' | 'error' | 'info' = 'info') => {
     const id = Date.now().toString();
@@ -183,6 +190,50 @@ export default function Home() {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 4000);
   }, []);
+
+  // Fetch session on mount and OAuth redirects
+  const checkSession = useCallback(async () => {
+    try {
+      const res = await fetch('/api/google/session');
+      const data = await res.json();
+      if (res.ok && data.authenticated && data.user) {
+        setCurrentUser(data.user);
+      } else {
+        setCurrentUser(null);
+      }
+    } catch {
+      setCurrentUser(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    checkSession();
+
+    // Check OAuth query parameters
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('auth') === 'success') {
+      addToast('Signed in with Google!', 'success');
+      checkSession();
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (params.get('error') === 'missing_credentials') {
+      addToast('Google credentials not configured in .env.local — see Settings', 'error');
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (params.get('error') === 'oauth_failed') {
+      addToast('Google Sign In failed. Please try again.', 'error');
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [addToast, checkSession]);
+
+  async function handleSignOut() {
+    try {
+      await fetch('/api/google/session', { method: 'DELETE' });
+      setCurrentUser(null);
+      addToast('Signed out from Google', 'info');
+    } catch {
+      addToast('Sign out failed', 'error');
+    }
+  }
+
 
   // Extract title from first heading
   function extractTitle(md: string): string {
@@ -325,34 +376,39 @@ export default function Home() {
   }
 
   // Export Google Docs
-  function handleExportGoogleDocs() {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get('google_token');
-
-    if (!token) {
+  async function handleExportGoogleDocs() {
+    if (!currentUser) {
+      addToast('Redirecting to Google Sign In...', 'info');
       window.location.href = '/api/google/auth';
       return;
     }
 
-    fetch('/api/google/export', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title: docTitle,
-        markdown,
-        accessToken: token,
-      }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.url) {
-          window.open(data.url, '_blank');
-          addToast('Exported to Google Docs', 'success');
+    addToast('Exporting to Google Docs...', 'info');
+    try {
+      const res = await fetch('/api/google/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: docTitle,
+          markdown,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.url) {
+        window.open(data.url, '_blank');
+        addToast('Exported to Google Docs!', 'success');
+      } else {
+        if (res.status === 400 && data.error?.includes('unauthenticated')) {
+          addToast('Google session expired. Please sign in again.', 'error');
+          setCurrentUser(null);
         } else {
-          addToast('Google Docs export failed', 'error');
+          addToast(data.error || 'Google Docs export failed', 'error');
         }
-      })
-      .catch(() => addToast('Google Docs export failed', 'error'));
+      }
+    } catch {
+      addToast('Google Docs export failed', 'error');
+    }
   }
 
   // Custom background wallpaper handlers
@@ -401,24 +457,37 @@ export default function Home() {
 
     setIsRefining(true);
     try {
+      const gemini = localStorage.getItem('md_gemini_key') || undefined;
+      const openai = localStorage.getItem('md_openai_key') || undefined;
+      const anthropic = localStorage.getItem('md_anthropic_key') || undefined;
+      const preferred = (localStorage.getItem('md_preferred_provider') as 'Gemini' | 'OpenAI' | 'Anthropic') || 'Gemini';
+
       const res = await fetch('/api/refine', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: markdown }),
+        body: JSON.stringify({
+          text: markdown,
+          customKeys: { gemini, openai, anthropic },
+          preferredProvider: preferred,
+        }),
       });
 
-      if (!res.ok) throw new Error('Refinement failed');
+      const data = await res.json();
+      if (!res.ok || !data.markdown) {
+        throw new Error(data.error || 'Refinement failed');
+      }
 
-      const { markdown: refined, provider } = await res.json();
-      setMarkdown(refined);
+      setMarkdown(data.markdown);
       setIsSaved(false);
-      addToast(`Refined with ${provider}`, 'success');
-    } catch {
-      addToast('AI refinement failed — check API keys', 'error');
+      addToast(`Refined with ${data.provider}`, 'success');
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'AI refinement failed';
+      addToast(errorMsg, 'error');
     } finally {
       setIsRefining(false);
     }
   }
+
 
   const charCount = markdown.length;
   const wordCount = markdown.trim() ? markdown.trim().split(/\s+/).length : 0;
@@ -710,6 +779,34 @@ export default function Home() {
             )}
           </div>
 
+          {/* Settings & User Account button */}
+          {currentUser ? (
+            <button
+              type="button"
+              className="user-header-pill"
+              onClick={() => setIsSettingsOpen(true)}
+              title={`Signed in as ${currentUser.name}. Click for Settings`}
+              aria-label="Account and API Settings"
+            >
+              {currentUser.picture ? (
+                <img src={currentUser.picture} alt={currentUser.name} className="user-header-avatar" />
+              ) : (
+                <span className="user-header-fallback">{currentUser.name.charAt(0).toUpperCase()}</span>
+              )}
+              <span className="user-header-name">{currentUser.name.split(' ')[0]}</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="btn btn-ghost btn-icon wiggle"
+              onClick={() => setIsSettingsOpen(true)}
+              title="API Keys & Account Settings"
+              aria-label="API Keys and Account Settings"
+            >
+              <SettingsIcon size={18} />
+            </button>
+          )}
+
           <button
             type="button"
             className="btn btn-ghost btn-icon wiggle"
@@ -819,10 +916,26 @@ export default function Home() {
         isOpen={historyOpen}
         onClose={() => setHistoryOpen(false)}
         onRestore={handleRestore}
+        user={currentUser}
+        onSignOut={handleSignOut}
+        onOpenSettings={() => {
+          setHistoryOpen(false);
+          setIsSettingsOpen(true);
+        }}
+      />
+
+      {/* API & Account Settings Modal */}
+      <ApiSettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        user={currentUser}
+        onSignOut={handleSignOut}
+        onKeysSaved={() => addToast('API keys saved locally', 'success')}
       />
 
       {/* Toasts */}
       <Toast toasts={toasts} />
     </div>
+
   );
 }

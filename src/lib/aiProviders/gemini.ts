@@ -1,7 +1,7 @@
 import { TEXT_TO_MARKDOWN_SYSTEM_PROMPT, cleanAIOutput } from './rules';
 
-export async function refineWithGemini(text: string): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY;
+export async function refineWithGemini(text: string, customApiKey?: string): Promise<string> {
+  const apiKey = (customApiKey && customApiKey.trim()) || process.env.GEMINI_API_KEY;
   if (!apiKey || apiKey.startsWith('...') || apiKey.trim() === '') {
     throw new Error('GEMINI_API_KEY is not configured');
   }
@@ -34,8 +34,14 @@ export async function refineWithGemini(text: string): Promise<string> {
     }
   );
 
-  if (!res.ok) throw new Error(`Gemini failed: ${res.status}`);
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    const msg = errorData?.error?.message || `Gemini failed with status ${res.status}`;
+    throw new Error(msg);
+  }
+
   const data = await res.json();
   const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
   return cleanAIOutput(rawText);
 }
+

@@ -1,7 +1,7 @@
 import { TEXT_TO_MARKDOWN_SYSTEM_PROMPT, cleanAIOutput } from './rules';
 
-export async function refineWithOpenAI(text: string): Promise<string> {
-  const apiKey = process.env.OPENAI_API_KEY;
+export async function refineWithOpenAI(text: string, customApiKey?: string): Promise<string> {
+  const apiKey = (customApiKey && customApiKey.trim()) || process.env.OPENAI_API_KEY;
   if (!apiKey || apiKey.startsWith('...') || apiKey.trim() === '') {
     throw new Error('OPENAI_API_KEY is not configured');
   }
@@ -29,8 +29,14 @@ export async function refineWithOpenAI(text: string): Promise<string> {
     }),
   });
 
-  if (!res.ok) throw new Error(`OpenAI failed: ${res.status}`);
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    const msg = errorData?.error?.message || `OpenAI failed with status ${res.status}`;
+    throw new Error(msg);
+  }
+
   const data = await res.json();
   const rawText = data.choices?.[0]?.message?.content ?? '';
   return cleanAIOutput(rawText);
 }
+
