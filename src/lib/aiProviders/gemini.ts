@@ -8,12 +8,14 @@ export interface ProviderResult {
   totalKeys?: number;
 }
 
+let lastSuccessfulModel = 'gemini-3.5-flash-lite';
+
 export function extractApiKeys(raw?: string, envVar?: string): string[] {
   const source = (raw && raw.trim()) || (envVar ? process.env[envVar] : '') || '';
   if (!source) return [];
   return source
     .split(/[\n,;]+/)
-    .map((k) => k.trim())
+    .map((k) => k.replace(/^["']|["']$/g, '').trim())
     .filter((k) => k.length > 0 && !k.startsWith('...'));
 }
 
@@ -26,13 +28,19 @@ export async function refineWithGemini(
     throw new Error('GEMINI_API_KEY is not configured');
   }
 
-  // Fallback chain prioritized according to quota & capability
-  const candidateModels = [
-    'gemini-3.8-flash',
-    'gemini-3.6-flash',
+  // Fast lightweight models first for instant responses and generous quotas
+  const baseModels = [
     'gemini-3.5-flash-lite',
-    'gemini-3.1-flash-lite',
-    'gemini-2.5-flash',
+    'gemini-3.5-flash',
+    'gemini-flash-lite-latest',
+    'gemini-3.6-flash',
+    'gemini-3.8-flash',
+  ];
+
+  // Put the last known working model at the very front of the candidate list
+  const candidateModels = [
+    lastSuccessfulModel,
+    ...baseModels.filter((m) => m !== lastSuccessfulModel),
   ];
 
   let lastError = 'Gemini call failed';
@@ -50,6 +58,7 @@ export async function refineWithGemini(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
           {
             method: 'POST',
+            signal: AbortSignal.timeout(12000), // 12s per candidate to prevent long hangs
             headers: {
               'Content-Type': 'application/json',
             },
@@ -99,6 +108,7 @@ export async function refineWithGemini(
         const data = await res.json();
         const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
         if (rawText.trim()) {
+          lastSuccessfulModel = model;
           return {
             markdown: cleanAIOutput(rawText),
             model,
