@@ -47,21 +47,29 @@ CRITICAL TRANSFORMATION RULES:
 
 6. CODE, COMMANDS & CONFIGS:
    - Detect code, shell commands, or structured data (JSON, YAML, SQL).
-   - Wrap them in fenced triple backticks with the accurate language tag (e.g. \`\`\`bash, \`\`\`ts, \`\`\`json, \`\`\`sql, \`\`\`python).
+   - Recognize and clean web copy-paste artifacts where language badges are glued directly to code keywords (e.g. "Cint callMe" -> \`\`\`c\\nint callMe, "Cvoid pop()" -> \`\`\`c\\nvoid pop(), "PlaintextTry My Best" -> \`\`\`plaintext\\nTry My Best).
+   - Wrap all code snippets and program outputs in fenced triple backticks with the accurate language tag (e.g. \`\`\`c, \`\`\`plaintext, \`\`\`bash, \`\`\`ts, \`\`\`json, \`\`\`python).
    - Format inline variable names, functions, and filenames with single backticks (\`code\`).
 
-7. TABLES & COMPARISONS:
-   - Convert tabular, comma-separated, tab-separated, or comparison data into neat GitHub Flavored Markdown tables with headers and divider rows (| --- | --- |).
+7. EXAM QUESTIONS, SECTIONS & HIERARCHIES:
+   - Recognize question indicators like "Q1:", "Q2:", "Question 1:", "Part A:" and format them as bold section headings (## Q1: ...).
+   - Recognize sub-questions like "(a)", "(b)", "(c)", "(d)" and format them as clean subheadings (### (a) ...).
+   - When text represents tree/graph structures (e.g. "Root: 500Left Child of 500: 365..."), format them into clear nested bulleted lists showing parent-child hierarchy.
+   - When text represents traversals (Preorder, Inorder, Postorder), separate the order rule and list the numbers clearly.
 
-8. BLOCKQUOTES & EMPHASIS:
-   - Highlight important notes, philosophical implications, warnings, or key takeaways as blockquotes (> **Key Takeaway:** ...).
+8. TABLES & COMPARISONS:
+   - Convert structured comparison data into neat GitHub Flavored Markdown tables with headers and divider rows (| --- | --- |).
+   - Do NOT convert tab-delimited console output (like "P 1: 34\\t26\\t11...") into tables; format program output as \`\`\`plaintext code blocks.
+
+9. BLOCKQUOTES & EMPHASIS:
+   - Highlight important notes, warnings, or key takeaways as blockquotes (> **Note:** ...).
    - Bold key terms (**concept**) to make the text easily scannable and visually engaging.
 
-9. CONTENT FIDELITY & ZERO EMOJI:
+10. CONTENT FIDELITY & ZERO EMOJI:
    - Preserve 100% of facts, formulas, numbers, and technical details. Never omit or summarize away content.
    - Do NOT add any emojis (no 📝, 🚀, ✨). Maintain a clean, professional aesthetic.
 
-10. STRICT OUTPUT FORMAT:
+11. STRICT OUTPUT FORMAT:
    - Output ONLY the final raw markdown content.
    - Do NOT wrap the entire response in an outer \`\`\`markdown ... \`\`\` block.
    - Do NOT include any conversational preamble or sign-off.
@@ -103,79 +111,163 @@ export function heuristicTextToMarkdown(rawText: string): string {
   // Un-escape accidental \$ backslashes
   text = text.replace(/\\(\$)/g, '$1');
 
-  // Un-glue LaTeX $$ blocks from text using replacer functions to avoid JS '$$' -> '$' replacement bug
+  // Un-glue LaTeX $$ blocks from text using replacer functions
   text = text
     .replace(/([^\n\s])\$\$/g, (_, p1) => `${p1}\n\n$$\n`)
     .replace(/\$\$([^\n\s])/g, (_, p1) => `\n$$\n\n${p1}`);
 
-  // Repair common copy-paste concatenated headings and sentences
-  // e.g. "Euler's IdentityMathematics is often" -> "Euler's Identity\n\nMathematics is often"
+  // 1. Separate exam/study questions glued to preceding text, e.g. "order.  Q3:" or "500Q2:"
+  text = text.replace(/([^\n])\s*(Q\d+:|Question\s+\d+:|Part\s+[A-Z\d]+:)/gi, '$1\n\n## $2');
+
+  // 2. If text starts with Q1: or Question 1:
+  text = text.replace(/^(Q\d+:|Question\s+\d+:|Part\s+[A-Z\d]+:)/i, '# $1');
+
+  // 3. Separate sub-questions glued to text, e.g. "Traversal(a)" -> "Traversal\n\n### (a)"
+  text = text.replace(/([^\n\s])\s*(\([a-z\d]\)\s+[A-Z][^\n]+?)/g, '$1\n\n### $2');
+  text = text.replace(/(\n|^)\s*(\([a-z\d]\)\s+[A-Z][^\n]+?)/g, '$1### $2');
+
+  // 4. Separate glued code badges (e.g. "(Linear Search)Cint callMe3" or "list).  Cvoid pop() {")
+  text = text.replace(
+    /([^\n])\s*C(int|void|char|float|double|bool|struct|long)\s+([a-zA-Z0-9_]+\s*\([^)]*\)\s*\{)/g,
+    '$1\n\n```c\n$2 $3'
+  );
+
+  // 5. Separate glued Plaintext output (e.g. "Output of the programPlaintextTry My Best" or "right.  PlaintextP 1:")
+  text = text.replace(/([^\n])\s*Plaintext([^\n]+)/g, '$1\n\n```plaintext\n$2');
+
+  // 6. Fix Traversal parenthetical sequences: "(b) Preorder Traversal(Root, Left, Right)500, 365, 212..."
+  text = text.replace(/(Traversal)\s*(\([^)]+\))\s*([\d,\s]+)/gi, '$1\n\n*$2*\n\n$3\n');
+
+  // 7. Repair common copy-paste concatenated headings and sentences
   text = text
     .replace(/(Identity)(Mathematics)/g, '$1\n\n$2')
     .replace(/(Foundation)(To\b)/g, '$1\n\n$2')
     .replace(/(Implication)(This\b)/g, '$1\n\n$2')
     .replace(/([a-z0-9]{2,})([A-Z][a-z]+(?:\s+(?:is|often|to|was|were|the|this|that|in|on|at|by|from|with)\b|[A-Z]))/g, '$1\n\n$2');
 
-  // If text is a single continuous long line without newlines, segment into paragraphs by sentences
-  if (!text.includes('\n') && text.length > 120) {
-    const sentences = text.match(/[^.!?]+[.!?]+(\s+|$)/g) || [text];
-    const paragraphs: string[] = [];
-    let currentPara: string[] = [];
-
-    for (const s of sentences) {
-      currentPara.push(s.trim());
-      if (currentPara.length >= 3 || currentPara.join(' ').length > 250) {
-        paragraphs.push(currentPara.join(' '));
-        currentPara = [];
-      }
-    }
-    if (currentPara.length > 0) {
-      paragraphs.push(currentPara.join(' '));
-    }
-    text = paragraphs.join('\n\n');
-  }
-
   const lines = text.split('\n');
   const resultLines: string[] = [];
+  let inCode = false;
+  let inPlaintext = false;
+  let braceCount = 0;
   let hasH1 = false;
-  let inCodeBlock = false;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const trimmed = line.trim();
 
-    // Empty lines
     if (!trimmed) {
-      resultLines.push('');
+      if (!inCode && !inPlaintext) {
+        resultLines.push('');
+      }
       continue;
     }
 
     // Toggle existing code blocks
-    if (trimmed.startsWith('```')) {
-      inCodeBlock = !inCodeBlock;
+    if (trimmed.startsWith('```c') || (trimmed.startsWith('```') && !trimmed.startsWith('```plaintext'))) {
+      inCode = true;
+      braceCount = 0;
+      resultLines.push(line);
+      for (const char of line) {
+        if (char === '{') braceCount++;
+        if (char === '}') braceCount--;
+      }
+      continue;
+    }
+
+    if (trimmed.startsWith('```plaintext')) {
+      inPlaintext = true;
       resultLines.push(line);
       continue;
     }
 
-    if (inCodeBlock) {
+    if (inCode) {
+      resultLines.push(line);
+      for (const char of line) {
+        if (char === '{') braceCount++;
+        if (char === '}') braceCount--;
+      }
+      if (braceCount <= 0 && line.includes('}')) {
+        resultLines.push('```\n');
+        inCode = false;
+      }
+      continue;
+    }
+
+    if (inPlaintext) {
+      if (
+        trimmed.startsWith('### ') ||
+        trimmed.startsWith('## ') ||
+        trimmed.startsWith('# ') ||
+        (trimmed.startsWith('(') && trimmed.includes('Explain'))
+      ) {
+        resultLines.push('```\n');
+        inPlaintext = false;
+        resultLines.push(line);
+        continue;
+      }
       resultLines.push(line);
       continue;
     }
 
-    // First line without markdown heading markers can be promoted to H1 if short and title-like
+    // Check for "P 1: ... P 9: ..." block that should be inside plaintext block
+    if (/^P\s*\d+:/.test(trimmed)) {
+      const codeLines = [line];
+      while (
+        i + 1 < lines.length &&
+        (/^P\s*\d+:/.test(lines[i + 1].trim()) || lines[i + 1].trim().startsWith('(Note:'))
+      ) {
+        i++;
+        codeLines.push(lines[i]);
+      }
+      resultLines.push('```plaintext');
+      for (const cl of codeLines) {
+        if (cl.trim().startsWith('(Note:')) {
+          resultLines.push('```');
+          resultLines.push(`\n*${cl.trim()}*\n`);
+        } else {
+          resultLines.push(cl);
+        }
+      }
+      if (!codeLines[codeLines.length - 1].trim().startsWith('(Note:')) {
+        resultLines.push('```\n');
+      }
+      continue;
+    }
+
+    // Check for Tree structure ungluing: "Root: 500Left Child of 500: 365..."
+    if (line.includes('Root:') && line.includes('Child of')) {
+      const parts = line.split(/(?=(?:Root:|Left Child of|Right Child of))/g);
+      for (const p of parts) {
+        const pt = p.trim();
+        if (pt.startsWith('Root:')) {
+          resultLines.push(`- **${pt}**`);
+        } else if (pt.startsWith('Left Child of') || pt.startsWith('Right Child of')) {
+          resultLines.push(`  - ${pt}`);
+        } else if (pt) {
+          resultLines.push(pt);
+        }
+      }
+      continue;
+    }
+
+    // Close plaintext output if following line is a new subsection
+    if (trimmed.startsWith('Ouput value is') || trimmed.startsWith('Output value is')) {
+      resultLines.push(line);
+      if (i + 1 < lines.length && lines[i + 1].trim().startsWith('###')) {
+        resultLines.push('```\n');
+      }
+      continue;
+    }
+
+    // First line heading
     if (!hasH1 && i === 0 && !trimmed.startsWith('#') && trimmed.length < 80 && !trimmed.endsWith('.')) {
       resultLines.push(`# ${trimmed}`);
       hasH1 = true;
       continue;
     }
 
-    // Detect standalone section titles like "The Mathematical Foundation"
-    if (/^(The\s+[A-Z][A-Za-z0-9\s]{3,40})$/.test(trimmed) && !trimmed.startsWith('#') && !trimmed.endsWith('.')) {
-      resultLines.push(`## ${trimmed}`);
-      continue;
-    }
-
-    // Convert bullet-like characters (•, –, ›, ►, ▪) to standard hyphen
+    // Bullet-like characters
     if (/^[•–›►▪]\s+/.test(trimmed)) {
       resultLines.push(trimmed.replace(/^[•–›►▪]\s+/, '- '));
       continue;
@@ -187,14 +279,18 @@ export function heuristicTextToMarkdown(rawText: string): string {
       continue;
     }
 
-    // Detect common tab/pipe delimited table lines
-    if (trimmed.includes('\t') && !trimmed.startsWith('|')) {
+    // Delimited tables (only when not inside code/output)
+    if (trimmed.includes('\t') && !trimmed.startsWith('|') && !/^P\s*\d+:/.test(trimmed)) {
       const cells = trimmed.split('\t').map((c) => c.trim());
       resultLines.push(`| ${cells.join(' | ')} |`);
       continue;
     }
 
     resultLines.push(line);
+  }
+
+  if (inCode || inPlaintext) {
+    resultLines.push('```\n');
   }
 
   return resultLines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
