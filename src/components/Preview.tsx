@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { markdownToHtml } from '@/lib/markdown';
-import { EmptyDocIllustration } from './Icons';
+import { DEFAULT_MARKDOWN } from '@/lib/defaultMarkdown';
 
 interface PreviewProps {
   markdown: string;
@@ -13,17 +13,15 @@ interface PreviewProps {
 export default function Preview({ markdown, theme, previewRef }: PreviewProps) {
   const [html, setHtml] = useState('');
 
+  // Fallback to default showcase profile when editor is empty
+  const effectiveMarkdown = markdown.trim() ? markdown : DEFAULT_MARKDOWN;
+
   useEffect(() => {
     let cancelled = false;
 
     async function render() {
-      if (!markdown.trim()) {
-        setHtml('');
-        return;
-      }
-
       try {
-        const result = await markdownToHtml(markdown);
+        const result = await markdownToHtml(effectiveMarkdown);
         if (!cancelled) setHtml(result);
       } catch (err) {
         console.error('Markdown render error:', err);
@@ -35,27 +33,23 @@ export default function Preview({ markdown, theme, previewRef }: PreviewProps) {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [markdown]);
+  }, [effectiveMarkdown]);
 
-  if (!markdown.trim()) {
-    return (
-      <div className="empty-preview" data-preview-theme={theme}>
-        <div className="empty-preview-icon">
-          <EmptyDocIllustration size={64} />
-        </div>
-        <h3>Nothing to preview yet</h3>
-        <p style={{ color: 'var(--crayon-text-muted)', fontSize: 'var(--font-size-base)' }}>
-          Start writing markdown in the editor and your live preview will appear here.
-        </p>
-      </div>
-    );
-  }
+  // Ensure external links open in a new tab without interrupting editing session
+  const handleContentClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const anchor = (e.target as HTMLElement).closest('a');
+    if (anchor && anchor.href && /^https?:\/\//i.test(anchor.href)) {
+      anchor.setAttribute('target', '_blank');
+      anchor.setAttribute('rel', 'noopener noreferrer');
+    }
+  }, []);
 
   return (
     <div data-preview-theme={theme} style={{ height: '100%', overflow: 'auto' }}>
       <div
         ref={previewRef}
         className="preview-content"
+        onClick={handleContentClick}
         dangerouslySetInnerHTML={{ __html: html }}
       />
     </div>

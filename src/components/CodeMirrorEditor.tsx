@@ -74,6 +74,12 @@ const crayonTheme = EditorView.theme({
     border: '1px solid #BA68C8',
     color: '#7B1FA2',
   },
+  '.cm-placeholder': {
+    color: '#A08090 !important',
+    fontStyle: 'italic',
+    fontFamily: "'Patrick Hand', cursive, sans-serif",
+    fontSize: '1.15rem',
+  },
 });
 
 export default function CodeMirrorEditor({ value, onChange }: CodeMirrorEditorProps) {
@@ -83,7 +89,7 @@ export default function CodeMirrorEditor({ value, onChange }: CodeMirrorEditorPr
       height="100%"
       extensions={[markdown({ codeLanguages: languages }), crayonTheme, EditorView.lineWrapping, pasteHandler]}
       onChange={(val) => onChange(val)}
-      placeholder="Start writing your markdown here..."
+      placeholder="Paste your content here..."
       basicSetup={{
         lineNumbers: true,
         highlightActiveLineGutter: true,

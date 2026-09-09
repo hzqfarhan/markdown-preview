@@ -1168,23 +1168,51 @@ a:hover {
   border-radius: 6px;
 }
 
+/* Flex container for Avatar + Banner side-by-side */
+.preview-content p:has(img[alt*="Avatar" i]),
+.preview-content p:has(img[alt*="pfp" i]) {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 14px 0 18px 0;
+}
+
 .preview-content img[alt*="Avatar" i],
 .preview-content img[alt*="pfp" i] {
   width: 96px;
   height: 96px;
+  min-width: 96px;
   border-radius: 50%;
   border: 3.5px solid var(--crayon-pink, #E91E8C);
   box-shadow: 0 6px 18px rgba(233, 30, 140, 0.22);
   display: block;
-  margin: 12px 0 16px 0;
   object-fit: cover;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  margin: 0;
 }
 
 .preview-content img[alt*="Avatar" i]:hover,
 .preview-content img[alt*="pfp" i]:hover {
   transform: scale(1.06);
   box-shadow: 0 8px 24px rgba(233, 30, 140, 0.35);
+}
+
+.preview-content img[alt*="Banner" i] {
+  height: 96px;
+  max-height: 96px;
+  max-width: 100%;
+  border-radius: 16px;
+  border: 2px solid var(--crayon-border, #E8C8D8);
+  box-shadow: 0 4px 14px rgba(123, 31, 162, 0.12);
+  object-fit: cover;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  margin: 0;
+}
+
+.preview-content img[alt*="Banner" i]:hover {
+  transform: scale(1.02);
+  box-shadow: 0 6px 18px rgba(123, 31, 162, 0.2);
 }
 
 /* ----------------------------------------------------------
