@@ -70,9 +70,12 @@ export async function refineToMarkdown(
     try {
       const result = await withTimeout(fn(text, customKey), TIMEOUT_MS);
       if (result?.markdown?.trim()) {
-        const providerLabel = result.wasFallback
-          ? `${name} (${result.model} fallback)`
-          : `${name} (${result.model})`;
+        const keyInfo =
+          result.totalKeys && result.totalKeys > 1
+            ? ` - Key ${(result.keyUsedIndex ?? 0) + 1}`
+            : '';
+        const fallbackInfo = result.wasFallback ? ' fallback' : '';
+        const providerLabel = `${name} (${result.model}${keyInfo}${fallbackInfo})`;
         return { markdown: result.markdown, provider: providerLabel };
       }
     } catch (err: unknown) {

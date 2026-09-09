@@ -11,23 +11,33 @@ export async function POST(req: NextRequest) {
 
   try {
     let modelUsed = '';
+    let keyInfo = '';
     const prov = provider.toLowerCase();
     if (prov === 'gemini') {
       const res = await refineWithGemini(testText, apiKey);
       modelUsed = res.model;
+      if (res.totalKeys && res.totalKeys > 1) {
+        keyInfo = ` - Key ${(res.keyUsedIndex ?? 0) + 1}/${res.totalKeys}`;
+      }
     } else if (prov === 'openai') {
       const res = await refineWithOpenAI(testText, apiKey);
       modelUsed = res.model;
+      if (res.totalKeys && res.totalKeys > 1) {
+        keyInfo = ` - Key ${(res.keyUsedIndex ?? 0) + 1}/${res.totalKeys}`;
+      }
     } else if (prov === 'anthropic') {
       const res = await refineWithAnthropic(testText, apiKey);
       modelUsed = res.model;
+      if (res.totalKeys && res.totalKeys > 1) {
+        keyInfo = ` - Key ${(res.keyUsedIndex ?? 0) + 1}/${res.totalKeys}`;
+      }
     } else {
       return NextResponse.json({ error: 'Unknown provider' }, { status: 400 });
     }
 
     return NextResponse.json({
       success: true,
-      provider: `${provider}${modelUsed ? ` (${modelUsed})` : ''}`,
+      provider: `${provider}${modelUsed ? ` (${modelUsed}${keyInfo})` : ''}`,
     });
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : 'Connection test failed';

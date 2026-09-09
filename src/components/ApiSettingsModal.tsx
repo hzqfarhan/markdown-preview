@@ -363,7 +363,7 @@ export default function ApiSettingsModal({
                 type={showKeys ? 'text' : 'password'}
                 value={geminiKey}
                 onChange={(e) => setGeminiKey(e.target.value)}
-                placeholder="AIzaSy... (or keep blank to use .env.local)"
+                placeholder="AIzaSy... (supports multiple keys separated by commas)"
                 style={{
                   width: '100%',
                   padding: '10px 14px',
@@ -381,7 +381,7 @@ export default function ApiSettingsModal({
                 type={showKeys ? 'text' : 'password'}
                 value={openaiKey}
                 onChange={(e) => setOpenaiKey(e.target.value)}
-                placeholder="sk-... (or keep blank to use .env.local)"
+                placeholder="sk-... (supports multiple keys separated by commas)"
                 style={{
                   width: '100%',
                   padding: '10px 14px',
@@ -399,7 +399,7 @@ export default function ApiSettingsModal({
                 type={showKeys ? 'text' : 'password'}
                 value={anthropicKey}
                 onChange={(e) => setAnthropicKey(e.target.value)}
-                placeholder="sk-ant-... (or keep blank to use .env.local)"
+                placeholder="sk-ant-... (supports multiple keys separated by commas)"
                 style={{
                   width: '100%',
                   padding: '10px 14px',
@@ -417,13 +417,15 @@ export default function ApiSettingsModal({
                 margin: '6px 0 0 0',
                 fontSize: '0.75rem',
                 color: 'var(--crayon-text-muted, #A08090)',
+                lineHeight: 1.4,
               }}
             >
-              You can enter a key here to save in your browser, or set it in your project&apos;s{' '}
+              Saved in browser or loaded from{' '}
               <code style={{ background: '#f5f0f3', padding: '1px 4px', borderRadius: '4px' }}>
                 .env.local
-              </code>{' '}
-              file.
+              </code>
+              .<br />
+              <strong style={{ color: 'var(--crayon-purple, #7B1FA2)' }}>Multi-Key Fallback:</strong> You can paste multiple keys separated by commas from different projects for automatic failover when limits are reached.
             </p>
           </div>
 
