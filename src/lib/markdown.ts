@@ -4,6 +4,7 @@ import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import remarkRehype from 'remark-rehype';
 import rehypeKatex from 'rehype-katex';
+import rehypePrism from 'rehype-prism-plus';
 import rehypeStringify from 'rehype-stringify';
 
 export async function markdownToHtml(markdown: string): Promise<string> {
@@ -13,6 +14,7 @@ export async function markdownToHtml(markdown: string): Promise<string> {
     .use(remarkGfm)
     .use(remarkRehype)
     .use(rehypeKatex)
+    .use(rehypePrism, { ignoreMissing: true, showLineNumbers: true })
     .use(rehypeStringify)
     .process(markdown);
 

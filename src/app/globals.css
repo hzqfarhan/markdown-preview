@@ -855,6 +855,18 @@ a:hover {
   --preview-border: #d0d7de;
   --preview-blockquote: #656d76;
   --preview-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --preview-code-gutter: #8c959f;
+  --preview-code-gutter-border: #e1e4e8;
+  --token-keyword: #cf222e;
+  --token-type: #953800;
+  --token-function: #8250df;
+  --token-string: #0a3069;
+  --token-number: #0550ae;
+  --token-comment: #6e7781;
+  --token-operator: #cf222e;
+  --token-punctuation: #57606a;
+  --token-variable: #1f2328;
+  --token-property: #0550ae;
 }
 
 /* Sepia theme */
@@ -868,6 +880,18 @@ a:hover {
   --preview-border: #d4c5a9;
   --preview-blockquote: #7a6652;
   --preview-font: Georgia, "Times New Roman", serif;
+  --preview-code-gutter: #9e8b74;
+  --preview-code-gutter-border: #d4c5a9;
+  --token-keyword: #9e2a2b;
+  --token-type: #22577a;
+  --token-function: #1d3557;
+  --token-string: #386641;
+  --token-number: #bc6c25;
+  --token-comment: #7f7062;
+  --token-operator: #9e2a2b;
+  --token-punctuation: #5b4636;
+  --token-variable: #3a2a1d;
+  --token-property: #22577a;
 }
 
 /* Crayon theme (default) */
@@ -881,6 +905,18 @@ a:hover {
   --preview-border: var(--crayon-border);
   --preview-blockquote: var(--crayon-text-secondary);
   --preview-font: var(--font-body);
+  --preview-code-gutter: #ab92bf;
+  --preview-code-gutter-border: rgba(186, 104, 200, 0.25);
+  --token-keyword: #c2185b;
+  --token-type: #00897b;
+  --token-function: #3949ab;
+  --token-string: #2e7d32;
+  --token-number: #e65100;
+  --token-comment: #8e7d96;
+  --token-operator: #d32f2f;
+  --token-punctuation: #5c3a70;
+  --token-variable: #2e1065;
+  --token-property: #0284c7;
 }
 
 /* Preview pane content styling */
@@ -945,23 +981,138 @@ a:hover {
   color: var(--preview-code-text);
   padding: 2px 6px;
   border-radius: 4px;
-  font-family: var(--font-code);
+  font-family: var(--font-code, 'Fira Code', monospace);
   font-size: 0.9em;
 }
 
 .preview-content pre {
   background: var(--preview-code-bg);
-  padding: var(--space-md);
+  padding: var(--space-md) 0;
   border-radius: var(--radius-md);
   overflow-x: auto;
   margin: 0 0 var(--space-md);
   border: 1px solid var(--preview-border);
+  font-family: var(--font-code, 'Fira Code', monospace);
+  font-size: 0.88em;
+  line-height: 1.6;
+  tab-size: 4;
 }
 
 .preview-content pre code {
   background: none;
   padding: 0;
   border-radius: 0;
+  font-family: inherit;
+  display: block;
+  min-width: 100%;
+  width: max-content;
+  color: var(--preview-code-text);
+}
+
+/* Code block line numbers and gutter */
+.preview-content .code-line {
+  display: block;
+  padding-left: 0.75rem;
+  padding-right: 1.5rem;
+  min-height: 1.6em;
+}
+
+.preview-content .code-line.line-number {
+  padding-left: 0;
+}
+
+.preview-content .code-line.line-number::before {
+  display: inline-block;
+  box-sizing: border-box;
+  width: 3.25rem;
+  padding-right: 1rem;
+  margin-right: 0.85rem;
+  text-align: right;
+  color: var(--preview-code-gutter);
+  content: attr(line);
+  user-select: none;
+  -webkit-user-select: none;
+  font-variant-numeric: tabular-nums;
+  border-right: 1px solid var(--preview-code-gutter-border, rgba(0, 0, 0, 0.08));
+}
+
+.preview-content .code-line:hover {
+  background: rgba(0, 0, 0, 0.025);
+}
+
+.preview-content .highlight-line {
+  background-color: rgba(233, 30, 140, 0.08);
+}
+
+/* Multi-color Syntax Highlighting Tokens */
+.preview-content .token.keyword {
+  color: var(--token-keyword);
+  font-weight: 600;
+}
+
+.preview-content .token.builtin,
+.preview-content .token.class-name,
+.preview-content .token.type {
+  color: var(--token-type);
+  font-weight: 600;
+}
+
+.preview-content .token.function {
+  color: var(--token-function);
+}
+
+.preview-content .token.string,
+.preview-content .token.char {
+  color: var(--token-string);
+}
+
+.preview-content .token.number,
+.preview-content .token.boolean {
+  color: var(--token-number);
+}
+
+.preview-content .token.comment,
+.preview-content .token.prolog,
+.preview-content .token.doctype,
+.preview-content .token.cdata {
+  color: var(--token-comment);
+  font-style: italic;
+}
+
+.preview-content .token.operator {
+  color: var(--token-operator);
+}
+
+.preview-content .token.punctuation {
+  color: var(--token-punctuation);
+}
+
+.preview-content .token.variable,
+.preview-content .token.constant {
+  color: var(--token-variable);
+}
+
+.preview-content .token.property,
+.preview-content .token.tag,
+.preview-content .token.attr-name {
+  color: var(--token-property);
+}
+
+.preview-content .token.attr-value {
+  color: var(--token-string);
+}
+
+.preview-content .token.regex,
+.preview-content .token.important {
+  color: var(--token-operator);
+}
+
+.preview-content .token.bold {
+  font-weight: bold;
+}
+
+.preview-content .token.italic {
+  font-style: italic;
 }
 
 .preview-content blockquote {

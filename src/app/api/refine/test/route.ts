@@ -10,21 +10,29 @@ export async function POST(req: NextRequest) {
   const testText = 'Hello world';
 
   try {
+    let modelUsed = '';
     const prov = provider.toLowerCase();
     if (prov === 'gemini') {
-      await refineWithGemini(testText, apiKey);
+      const res = await refineWithGemini(testText, apiKey);
+      modelUsed = res.model;
     } else if (prov === 'openai') {
-      await refineWithOpenAI(testText, apiKey);
+      const res = await refineWithOpenAI(testText, apiKey);
+      modelUsed = res.model;
     } else if (prov === 'anthropic') {
-      await refineWithAnthropic(testText, apiKey);
+      const res = await refineWithAnthropic(testText, apiKey);
+      modelUsed = res.model;
     } else {
       return NextResponse.json({ error: 'Unknown provider' }, { status: 400 });
     }
 
-    return NextResponse.json({ success: true, provider });
-  } catch (err: any) {
+    return NextResponse.json({
+      success: true,
+      provider: `${provider}${modelUsed ? ` (${modelUsed})` : ''}`,
+    });
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : 'Connection test failed';
     return NextResponse.json(
-      { success: false, error: err?.message || 'Connection test failed' },
+      { success: false, error: errorMsg },
       { status: 400 }
     );
   }

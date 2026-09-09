@@ -1,15 +1,36 @@
 import { TEXT_TO_MARKDOWN_SYSTEM_PROMPT, cleanAIOutput } from './rules';
 
-export async function refineWithGemini(text: string, customApiKey?: string): Promise<string> {
+export interface ProviderResult {
+  markdown: string;
+  model: string;
+  wasFallback: boolean;
+}
+
+export async function refineWithGemini(
+  text: string,
+  customApiKey?: string
+): Promise<ProviderResult> {
   const apiKey = (customApiKey && customApiKey.trim()) || process.env.GEMINI_API_KEY;
   if (!apiKey || apiKey.startsWith('...') || apiKey.trim() === '') {
     throw new Error('GEMINI_API_KEY is not configured');
   }
 
-  const candidateModels = ['gemini-flash-lite-latest', 'gemini-3.5-flash-lite', 'gemini-3.6-flash'];
+  // Fallback chain prioritized according to quota & capability within the same API key
+  const candidateModels = [
+    'gemini-3.8-flash',
+    'gemini-3.6-flash',
+    'gemini-3.5-flash-lite',
+    'gemini-3.1-flash-lite',
+    'gemini-2.5-flash',
+    'gemini-2.0-flash',
+  ];
+
   let lastError = 'Gemini call failed';
 
-  for (const model of candidateModels) {
+  for (let i = 0; i < candidateModels.length; i++) {
+    const model = candidateModels[i];
+    const isFallback = i > 0;
+
     try {
       const res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
@@ -41,21 +62,37 @@ export async function refineWithGemini(text: string, customApiKey?: string): Pro
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => null);
-        lastError = errorData?.error?.message || `Gemini (${model}) failed with status ${res.status}`;
+        const errorMsg = errorData?.error?.message || `Status ${res.status}`;
+        const isRateLimit =
+          res.status === 429 ||
+          /quota|resource_exhausted|rate limit|exhausted/i.test(errorMsg);
+
+        console.warn(
+          `[Gemini] Model ${model} failed (${isRateLimit ? 'Rate limit / quota exceeded' : `Status ${res.status}`}): ${errorMsg}.${
+            i < candidateModels.length - 1 ? ` Falling back to ${candidateModels[i + 1]}...` : ''
+          }`
+        );
+        lastError = `[${model}] ${errorMsg}`;
         continue;
       }
 
       const data = await res.json();
       const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
       if (rawText.trim()) {
-        return cleanAIOutput(rawText);
+        return {
+          markdown: cleanAIOutput(rawText),
+          model,
+          wasFallback: isFallback,
+        };
       }
-    } catch (err: any) {
-      lastError = err?.message || lastError;
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      console.warn(`[Gemini] Error contacting ${model}: ${errMsg}`);
+      lastError = `[${model}] ${errMsg || 'Network error'}`;
       continue;
     }
   }
 
-  throw new Error(lastError);
+  throw new Error(`All Gemini candidate models failed. ${lastError}`);
 }
 

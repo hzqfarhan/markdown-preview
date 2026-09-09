@@ -2,6 +2,7 @@
 
 import CodeMirror from '@uiw/react-codemirror';
 import { markdown } from '@codemirror/lang-markdown';
+import { languages } from '@codemirror/language-data';
 import { EditorView } from '@codemirror/view';
 
 interface CodeMirrorEditorProps {
@@ -80,7 +81,7 @@ export default function CodeMirrorEditor({ value, onChange }: CodeMirrorEditorPr
     <CodeMirror
       value={value}
       height="100%"
-      extensions={[markdown(), crayonTheme, EditorView.lineWrapping, pasteHandler]}
+      extensions={[markdown({ codeLanguages: languages }), crayonTheme, EditorView.lineWrapping, pasteHandler]}
       onChange={(val) => onChange(val)}
       placeholder="Start writing your markdown here..."
       basicSetup={{

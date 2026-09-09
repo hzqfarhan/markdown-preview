@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@codemirror/lang-markdown": "^6.5.2",
+    "@codemirror/language-data": "^6.5.2",
     "@uiw/react-codemirror": "^4.25.11",
     "dexie": "^4.4.5",
     "dexie-react-hooks": "^4.4.0",
@@ -23,6 +24,7 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "rehype-katex": "^7.0.1",
+    "rehype-prism-plus": "^2.0.2",
     "rehype-sanitize": "^6.0.0",
     "rehype-stringify": "^10.0.1",
     "remark-gfm": "^4.0.1",

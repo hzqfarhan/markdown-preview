@@ -1,4 +1,4 @@
-import { refineWithGemini } from './gemini';
+import { refineWithGemini, ProviderResult } from './gemini';
 import { refineWithOpenAI } from './openai';
 import { refineWithAnthropic } from './anthropic';
 import { heuristicTextToMarkdown } from './rules';
@@ -14,7 +14,7 @@ export interface RefineOptions {
   customKey?: string;
 }
 
-type ProviderFn = (text: string, customKey?: string) => Promise<string>;
+type ProviderFn = (text: string, customKey?: string) => Promise<ProviderResult>;
 
 interface ProviderEntry {
   name: string;
@@ -44,7 +44,7 @@ export async function refineToMarkdown(
   options?: RefineOptions
 ): Promise<{ markdown: string; provider: string }> {
   // Order providers according to preferredProvider if specified
-  let orderedProviders = [...allProviders];
+  const orderedProviders = [...allProviders];
   if (options?.preferredProvider) {
     const pref = options.preferredProvider.toLowerCase();
     const matchIndex = orderedProviders.findIndex(
@@ -68,12 +68,16 @@ export async function refineToMarkdown(
       options?.customKeys?.[name.toLowerCase()];
 
     try {
-      const markdown = await withTimeout(fn(text, customKey), TIMEOUT_MS);
-      if (markdown?.trim()) {
-        return { markdown, provider: name };
+      const result = await withTimeout(fn(text, customKey), TIMEOUT_MS);
+      if (result?.markdown?.trim()) {
+        const providerLabel = result.wasFallback
+          ? `${name} (${result.model} fallback)`
+          : `${name} (${result.model})`;
+        return { markdown: result.markdown, provider: providerLabel };
       }
-    } catch (err: any) {
-      errors.push(`${name}: ${err?.message || 'Failed'}`);
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      errors.push(`${name}: ${errMsg || 'Failed'}`);
       continue;
     }
   }
