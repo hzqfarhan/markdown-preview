@@ -1161,6 +1161,32 @@ a:hover {
   border-radius: var(--radius-md);
 }
 
+.preview-content a img {
+  display: inline-block;
+  vertical-align: middle;
+  margin: 3px 6px 3px 0;
+  border-radius: 6px;
+}
+
+.preview-content img[alt*="Avatar" i],
+.preview-content img[alt*="pfp" i] {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  border: 3.5px solid var(--crayon-pink, #E91E8C);
+  box-shadow: 0 6px 18px rgba(233, 30, 140, 0.22);
+  display: block;
+  margin: 12px 0 16px 0;
+  object-fit: cover;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.preview-content img[alt*="Avatar" i]:hover,
+.preview-content img[alt*="pfp" i]:hover {
+  transform: scale(1.06);
+  box-shadow: 0 8px 24px rgba(233, 30, 140, 0.35);
+}
+
 /* ----------------------------------------------------------
    12. Toast / Notification
    ---------------------------------------------------------- */

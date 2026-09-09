@@ -32,44 +32,77 @@ import { exportToDocx } from '@/lib/exportDocx';
 // Dynamic import Editor to avoid SSR
 const Editor = dynamic(() => import('@/components/Editor'), { ssr: false });
 
-const DEFAULT_MARKDOWN = `# Welcome to Markdown Previewer
+const DEFAULT_MARKDOWN = `# Haziq Farhan (@hzqfarhan)
 
-Write your markdown here and see it come to life with a hand-drawn crayon aesthetic.
+![Haziq Farhan Avatar](https://avatars.githubusercontent.com/u/203814306?v=4)
 
-## Features
+> Software Engineering student at **UTHM (1BIK)** | Full-Stack Developer & UI/UX Designer based in Malaysia.
 
-- Live Preview — Instant rendering as you type
-- Crayon Themes — Select your preferred reading style
-- Smart Folders — Auto-names your folders, with full edit control
-- History — Auto-saved locally in your browser
-- Export — Download as PDF, DOCX, or Google Docs
-- AI Refine — Clean up unstructured notes into tidy markdown
-- PWA — Fully offline-capable application
+[![GitHub](https://img.shields.io/badge/GitHub-hzqfarhan-181717?style=for-the-badge&logo=github)](https://github.com/hzqfarhan)
+[![Portfolio](https://img.shields.io/badge/Website-haziqfarhan.my-E91E8C?style=for-the-badge&logo=googlechrome&logoColor=white)](https://haziqfarhan.my)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-hzqfarhan-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/hzqfarhan)
+[![Instagram](https://img.shields.io/badge/Instagram-@icydho-E4405F?style=for-the-badge&logo=instagram&logoColor=white)](https://instagram.com/icydho)
+[![Discord](https://img.shields.io/badge/Discord-Community-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.com/users/692221016637702146)
 
-## Sample Code
+---
 
-\`\`\`javascript
-function createGreeting(name) {
-  return "Hello, " + name + "! Welcome to the markdown editor.";
+## 🌌 Overview
+
+I'm **Haziq Farhan**, a **Software Engineering** student at **Universiti Tun Hussein Onn Malaysia (UTHM)** with a strong passion for **full-stack web development**, **UI/UX design**, and building impactful digital products.
+
+I love crafting modern web experiences that blend clean aesthetics, practical functionality, and delightful user interactions.
+
+- 🔭 **Currently Building:** **ConsensusAI** — multi-LLM consensus aggregator & sentiment analyzer
+- 🎨 **Interests:** UI/UX Design, Product Development, 3D Design & Creative Web Systems
+- 🎮 **Background:** Graphic Designer at *VisualX Studio (VX)* for over 2 years
+- 📍 **Location:** Malaysia
+
+---
+
+## 🛠️ Tech Stack & Tools
+
+| Category | Technologies |
+| :--- | :--- |
+| **Frontend** | React, Next.js, TypeScript, Tailwind CSS, Vanilla CSS |
+| **Backend & Cloud** | Node.js, Supabase, Laravel, PHP, Python |
+| **Mobile & Systems** | Flutter, C++, Java |
+| **Design** | Figma, Adobe Creative Suite, 3D Modeling |
+
+---
+
+## 💻 Sample Code (ConsensusAI Engine)
+
+\`\`\`typescript
+interface ModelResponse {
+  provider: 'Gemini' | 'OpenAI' | 'Anthropic';
+  content: string;
+  confidenceScore: number;
+}
+
+export async function aggregateConsensus(prompt: string): Promise<string> {
+  const models = ['gemini-3.5-flash-lite', 'gpt-4o-mini', 'claude-3-5-sonnet'];
+  console.log(\`Running multi-model consensus for prompt: "\${prompt}"...\`);
+
+  // Evaluates agreement and merges responses into structured output
+  return \`Consensus reached across \${models.length} AI providers!\`;
 }
 \`\`\`
 
-> "Creativity is intelligence having fun." — Albert Einstein
+---
 
-### Checklist
+## 🎯 Current Roadmap & Goals
 
-- [x] Crayon styled pink and purple UI
-- [x] No emojis anywhere in the interface
-- [x] Automatic folder naming with custom user edits
-- [x] Client-side exports for PDF, DOCX, and Google Docs
+- [x] Full-Stack PWA with offline Dexie DB storage
+- [x] Multi-key fallback with automatic rate-limit failover
+- [x] Multi-color syntax highlighting with custom line numbers
+- [x] Google Docs 1-click cloud synchronization
+- [ ] Launch ConsensusAI multi-LLM scoring platform
 
-### Comparison Table
+---
 
-| Feature | Status | Notes |
-| :--- | :--- | :--- |
-| Live Preview | Active | Instant updates |
-| Auto-Folders | Active | Editable anytime |
-| Local Storage | Active | Private and offline |
+## ☕ Support & Connect
+
+[![SociaBuzz](https://img.shields.io/badge/Support_on_SociaBuzz-FF6A00?style=for-the-badge&logo=ko-fi&logoColor=white)](https://sociabuzz.com/hakhyun)
 `;
 
 export default function Home() {
@@ -81,8 +114,8 @@ export default function Home() {
   const [isRefining, setIsRefining] = useState(false);
   const [isSaved, setIsSaved] = useState(true);
   const [currentDocId, setCurrentDocId] = useState<number | null>(null);
-  const [docTitle, setDocTitle] = useState('Welcome to Markdown Previewer');
-  const [folder, setFolder] = useState('Guides & Docs');
+  const [docTitle, setDocTitle] = useState('Haziq Farhan (@hzqfarhan) — Developer Profile');
+  const [folder, setFolder] = useState('Profile');
   const [folderCustomized, setFolderCustomized] = useState(false);
   const [existingFolders, setExistingFolders] = useState<string[]>([]);
 
@@ -136,6 +169,21 @@ export default function Home() {
 
   const previewRef = useRef<HTMLDivElement>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Seamlessly upgrade legacy default markdown to the customized hzqfarhan profile
+  useEffect(() => {
+    setMarkdown((prev) => {
+      if (
+        prev.includes('# Welcome to Markdown Previewer') &&
+        prev.includes('Write your markdown here and see it come to life')
+      ) {
+        setDocTitle('Haziq Farhan (@hzqfarhan) — Developer Profile');
+        setFolder('Profile');
+        return DEFAULT_MARKDOWN;
+      }
+      return prev;
+    });
+  }, []);
 
   // Load saved theme from localStorage
   useEffect(() => {
